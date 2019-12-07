@@ -4,6 +4,7 @@
 #include <thread>
 #include <list>
 #include <utility>
+#include <condition_variable>
 #include <mutex>
 #include <atomic>
 #include "Fred/fredtopics.h"
@@ -24,10 +25,11 @@ public:
 private:
     string id;
     Fred* fred;
-    mutex lock;
+    condition_variable conditionVar;
     thread* queueThread;
     atomic<bool> isFinished, isProcessing;
     list<pair<ProcessMessage *, ChainTopic*> > stack;
+    mutex stackMutex;
 
     static void clearQueue(Queue* queue);
 };

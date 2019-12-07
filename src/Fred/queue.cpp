@@ -15,13 +15,16 @@ Queue::Queue(string alfId, Fred* fred)
 Queue::~Queue()
 {
     this->isFinished = true;
-    lock.unlock();
+    conditionVar.notify_one();
     queueThread->join();
     delete queueThread;
 }
 
 void Queue::clearQueue(Queue *queue)
 {
+    mutex lock;
+    unique_lock<mutex> uniqueLock(lock);
+
     while (1)
     {
         if (queue->isFinished)
@@ -29,14 +32,18 @@ void Queue::clearQueue(Queue *queue)
             return;
         }
 
-        queue->lock.lock();
+        queue->conditionVar.wait(uniqueLock);;
 
         while (!queue->stack.empty())
         {
             queue->isProcessing = true;
 
-            pair<ProcessMessage*, ChainTopic*> request = queue->stack.front();
-            queue->stack.pop_front();
+            pair<ProcessMessage*, ChainTopic*> request;
+            {
+                lock_guard<mutex> lockGuard(queue->stackMutex);
+                request = queue->stack.front();
+                queue->stack.pop_front();
+            }
             //do processing
             request.second->alfLink->setTransaction(request);
 
@@ -119,10 +126,13 @@ void Queue::clearQueue(Queue *queue)
 
 void Queue::newRequest(pair<ProcessMessage*, ChainTopic*> request)
 {
-    stack.push_back(request);
+    {
+        lock_guard<mutex> lockGuard(stackMutex);
+        stack.push_back(request);
+    }
 
     if (!isProcessing)
     {
-        lock.unlock();
+        conditionVar.notify_one();
     }
 }
