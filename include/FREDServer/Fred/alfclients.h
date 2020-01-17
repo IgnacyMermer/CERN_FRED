@@ -21,11 +21,11 @@ public:
     struct Nodes
     {
         AlfRpcInfo *sca, *swt, *ic;
+        Queue *queue;
     };
 
 private:
     map<string, map<int32_t, map<int32_t, Nodes> > > clients;
-    map<string, Queue*> queues;
     Fred* fred;
 
 public:
@@ -36,7 +36,7 @@ public:
     Nodes createAlfInfo(string id, int32_t serial, int32_t link);
 
     AlfRpcInfo* getAlfNode(string alf, int32_t serial, int32_t link, Instructions::Type type);
-    Queue* getAlfQueue(string alf);
+    Queue* getAlfQueue(string alf, int32_t serial, int32_t link);
 };
 
 #endif // ALFCLIENTS_H

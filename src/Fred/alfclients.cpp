@@ -10,9 +10,15 @@ AlfClients::AlfClients(Fred *fred)
 
 AlfClients::~AlfClients()
 {
-    for (auto it = queues.begin(); it != queues.end(); it++)
+    for (auto alf = clients.begin(); alf != clients.end(); alf++)
     {
-        delete it->second;
+        for (auto serial = alf->second.begin(); serial != alf->second.end(); serial++)
+        {
+            for (auto link = serial->second.begin(); link != serial->second.end(); link++)
+            {
+                delete link->second.queue;
+            }
+        }
     }
 }
 
@@ -21,7 +27,6 @@ void AlfClients::registerAlf(Location::AlfEntry &entry)
     if (clients.count(entry.id) == 0)
     {
         clients[entry.id] = map<int32_t, map<int32_t, Nodes> >();
-        queues[entry.id] = new Queue(entry.id, this->fred);
     }
 
     for (auto serial = entry.serials.begin(); serial != entry.serials.end(); serial++)
@@ -50,7 +55,7 @@ void AlfClients::registerAlf(Location::AlfEntry &entry)
 
 AlfClients::Nodes AlfClients::createAlfInfo(string id, int32_t serial, int32_t link)
 {
-    Nodes nodes = { .sca = NULL, .swt = NULL, .ic = NULL };
+    Nodes nodes = { .sca = NULL, .swt = NULL, .ic = NULL, .queue = NULL };
 
     nodes.swt = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/SWT_SEQUENCE", " ", this->fred);
     this->fred->RegisterRpcInfo(nodes.swt);
@@ -62,6 +67,8 @@ AlfClients::Nodes AlfClients::createAlfInfo(string id, int32_t serial, int32_t l
         nodes.ic = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/IC_SEQUENCE", " ", this->fred);
         this->fred->RegisterRpcInfo(nodes.ic);
     }
+
+    nodes.queue = new Queue(id, serial, link, this->fred);
 
     return nodes;
 }
@@ -83,7 +90,7 @@ AlfRpcInfo* AlfClients::getAlfNode(string alf, int32_t serial, int32_t link, Ins
     return NULL;
 }
 
-Queue* AlfClients::getAlfQueue(string alf)
+Queue* AlfClients::getAlfQueue(string alf, int32_t serial, int32_t link)
 {
-    return queues[alf];
+    return clients[alf][serial][link].queue;
 }

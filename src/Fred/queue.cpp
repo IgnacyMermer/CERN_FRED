@@ -3,9 +3,9 @@
 #include "Fred/alfinfo.h"
 #include "Alfred/print.h"
 
-Queue::Queue(string alfId, Fred* fred)
+Queue::Queue(string alfId, int32_t serial, int32_t link, Fred* fred)
 {
-    this->id = alfId;
+    this->id = alfId + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link);
     this->fred = fred;
     this->isFinished = false;
     this->isProcessing = false;
@@ -15,13 +15,16 @@ Queue::Queue(string alfId, Fred* fred)
 Queue::~Queue()
 {
     this->isFinished = true;
-    lock.unlock();
+    conditionVar.notify_one();
     queueThread->join();
     delete queueThread;
 }
 
 void Queue::clearQueue(Queue *queue)
 {
+    mutex lock;
+    unique_lock<mutex> uniqueLock(lock);
+
     while (1)
     {
         if (queue->isFinished)
@@ -29,14 +32,24 @@ void Queue::clearQueue(Queue *queue)
             return;
         }
 
-        queue->lock.lock();
+        queue->conditionVar.wait(uniqueLock);
 
         while (!queue->stack.empty())
         {
             queue->isProcessing = true;
 
-            pair<ProcessMessage*, ChainTopic*> request = queue->stack.front();
-            queue->stack.pop_front();
+            pair<ProcessMessage*, ChainTopic*> request;
+            {
+                lock_guard<mutex> lockGuard(queue->stackMutex);
+                request = queue->stack.front();
+                queue->stack.pop_front();
+            }
+
+            if (queue->stack.size() > 10)
+            {
+                Print::PrintWarning("Stack " + queue->id + " size is " + to_string(queue->stack.size()));
+            }
+
             //do processing
             AlfRpcInfo* alfLink = request.first->getUseCru() ? request.second->alfLink.first : request.second->alfLink.second;
             alfLink->setTransaction(request);  //CAN bus backup
@@ -103,10 +116,13 @@ void Queue::clearQueue(Queue *queue)
 
 void Queue::newRequest(pair<ProcessMessage*, ChainTopic*> request)
 {
-    stack.push_back(request);
+    {
+        lock_guard<mutex> lockGuard(stackMutex);
+        stack.push_back(request);
+    }
 
     if (!isProcessing)
     {
-        lock.unlock();
+        conditionVar.notify_one();
     }
 }

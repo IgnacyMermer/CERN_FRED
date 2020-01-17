@@ -19,7 +19,7 @@ CruRegisterCommand::CruRegisterCommand(Type type, Fred* fred): CommandString::Co
 CruRegisterCommand::~CruRegisterCommand()
 {
     this->isFinished = true;
-    lock.unlock();
+    conditionVar.notify_one();
     clearThread->join();
     delete clearThread;
 }
@@ -109,6 +109,9 @@ string CruRegisterCommand::builAlfTopic(Type type, uint32_t alf, uint32_t serial
 
 void CruRegisterCommand::clearRequests(CruRegisterCommand *self)
 {
+    mutex lock;
+    unique_lock<mutex> uniqueLock(lock);
+
     while (1)
     {
         if (self->isFinished)
@@ -116,14 +119,18 @@ void CruRegisterCommand::clearRequests(CruRegisterCommand *self)
             return;
         }
 
-        self->lock.lock();
+        self->conditionVar.wait(uniqueLock);
 
         while (!self->stack.empty())
         {
             self->isProcessing = true;
 
-            pair<string, RpcInfoString*> request = self->stack.front();
-            self->stack.pop_front();
+            pair<string, RpcInfoString*> request;
+            {
+                lock_guard<mutex> lockGuard(self->stackMutex);
+                request = self->stack.front();
+                self->stack.pop_front();
+            }
             //do processing
 
             char* buffer = strdup(request.first.c_str());
@@ -137,10 +144,13 @@ void CruRegisterCommand::clearRequests(CruRegisterCommand *self)
 
 void CruRegisterCommand::newRequest(pair<string, RpcInfoString*> request)
 {
-    stack.push_back(request);
+    {
+        lock_guard<mutex> lockGuard(stackMutex);
+        stack.push_back(request);
+    }
 
     if (!isProcessing)
     {
-        lock.unlock();
+        conditionVar.notify_one();
     }
 }

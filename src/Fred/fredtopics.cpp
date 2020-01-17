@@ -32,8 +32,8 @@ void FredTopics::registerUnit(string section, Mapping::Unit& unit, Instructions 
             topics[fullName].alfLink.first = !unit.alfs.first.alfId.empty() ? this->fred->getAlfClients().getAlfNode(unit.alfs.first.alfId, unit.alfs.first.serialId, unit.alfs.first.linkId, topics[fullName].instruction->type) : NULL;
             topics[fullName].alfLink.second = !unit.alfs.second.alfId.empty() && topics[fullName].instruction->type == Instructions::Type::SWT ? this->fred->getAlfClients().getAlfNode(unit.alfs.second.alfId, unit.alfs.second.serialId, unit.alfs.second.linkId, topics[fullName].instruction->type) : NULL; //for backup CAN bus
 
-            topics[fullName].alfQueue.first = topics[fullName].alfLink.first ? this->fred->getAlfClients().getAlfQueue(unit.alfs.first.alfId) : NULL;
-            topics[fullName].alfQueue.second = topics[fullName].alfLink.second ? this->fred->getAlfClients().getAlfQueue(unit.alfs.second.alfId) : NULL;
+            topics[fullName].alfQueue.first = topics[fullName].alfLink.first ? this->fred->getAlfClients().getAlfQueue(unit.alfs.first.alfId, unit.alfs.first.serialId, unit.alfs.first.linkId) : NULL;
+            topics[fullName].alfQueue.second = topics[fullName].alfLink.second ? this->fred->getAlfClients().getAlfQueue(unit.alfs.second.alfId, unit.alfs.second.serialId, unit.alfs.second.linkId) : NULL;
 
             topics[fullName].placeId = uId;
             topics[fullName].mapi = NULL;
