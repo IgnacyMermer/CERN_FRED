@@ -57,10 +57,10 @@ vector<string> SWT::generateMessage(Instructions::Instruction& instructions, vec
 				{
 					result.push_back(message.erase(message.size() - 1));
 					pollPattern.push_back("");
-					message = "";
+					message = "reset\n";
 				}
 
-				result.push_back(line);
+				result.push_back("reset\n" + line);
 				pollPattern.push_back(pollEqn);
 
 				continue;
@@ -113,7 +113,7 @@ void SWT::checkIntegrity(const string& request, const string& response)
 	vector<string> reqVec = Utility::splitString(request, "\n");
 	vector<string> resVec = Utility::splitString(response, "\n");
 
-	reqVec.erase(reqVec.begin()); //remove first line "reset" 
+	reqVec.erase(remove(reqVec.begin(), reqVec.end(), "reset"), reqVec.end()); //remove reset's
 
 	if (reqVec.size() != resVec.size())
 	{
