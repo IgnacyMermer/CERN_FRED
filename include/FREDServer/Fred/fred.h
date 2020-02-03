@@ -8,6 +8,7 @@
 #include "Fred/Mapi/mapi.h"
 #include "Fred/Mapi/iterativemapi.h"
 #include "Fred/Mapi/mapigroup.h"
+#include "Database/databaseinterface.h"
 
 class Fred: public ALFRED
 {
@@ -22,10 +23,12 @@ private:
     FredTopics fredTopics;
 
     string fredDns;
+    DatabaseInterface* databaseInterface;
 
 public:
-    Fred(bool parseOnly, string fredName, string fredDns, string mainDirectory);
-    static pair<string, string> readConfigFile();
+    Fred(bool parseOnly, map<string, string> config, string mainDirectory);
+    ~Fred();
+    static map<string, string> readConfigFile();
     static bool commandLineArguments(int argc, char** argv);
 
     AlfClients &getAlfClients();

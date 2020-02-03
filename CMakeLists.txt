@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.1)
 set(CMAKE_CXX_STANDARD 11)
 project(FREDServer)
 
-include_directories(include/FREDServer include)
+include_directories(include/FREDServer include include/occi)
 link_directories(lib)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib)
@@ -52,7 +52,9 @@ file(GLOB SOURCES "src/main.cpp"
                 "src/Fred/Protocols/SCA.cpp"
                 "src/Fred/Protocols/SWT.cpp"
                 "src/Fred/Protocols/IC.cpp"
+		"src/Fred/Database/databaseinterface.cpp"
+		"src/Fred/Database/multitype.cpp"
 	)
 
 add_executable(FREDServer ${SOURCES})
-target_link_libraries(FREDServer Alfred libboost_program_options.a)
+target_link_libraries(FREDServer Alfred libboost_program_options.a clntsh occi clntshcore nnz19 ociicus)
