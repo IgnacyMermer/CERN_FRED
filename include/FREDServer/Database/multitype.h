@@ -11,6 +11,11 @@ public:
     virtual double getDouble() = 0;
     virtual string getString() = 0;
 
+    virtual bool isInt() = 0;
+    virtual bool isDouble() = 0;
+    virtual bool isNumeric() = 0;
+    virtual bool isString() = 0;
+
     virtual ~MultiBase();
 
 protected:
@@ -49,4 +54,9 @@ public:
     int getInt();
     double getDouble();
     string getString();
+
+    bool isInt();
+    bool isDouble();
+    bool isNumeric();
+    bool isString();
 };

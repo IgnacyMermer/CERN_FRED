@@ -113,6 +113,26 @@ template <typename Type> string MultiType<Type>::getString()
 	return wrapper.getString();
 }
 
+template <typename Type> bool MultiType<Type>::isInt()
+{
+    return getType() == "i";
+}
+
+template <typename Type> bool MultiType<Type>::isDouble()
+{
+    return getType() == "d";
+}
+
+template <typename Type> bool MultiType<Type>::isNumeric()
+{
+    return isInt() || isDouble();
+}
+
+template <typename Type> bool MultiType<Type>::isString()
+{
+    return getType() == "Ss";
+}
+
 template class MultiType<int>;
 template class MultiType<double>;
 template class MultiType<string>;
