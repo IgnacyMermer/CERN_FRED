@@ -24,9 +24,18 @@ public:
 
     bool connect();
 
+    static bool isConnected();
+    static bool isConnected(string& message);
+
     static vector<vector<MultiBase*> > executeQuery(const string& query, bool& status, string& message);
+    static vector<vector<MultiBase*> > executeQuery(const string& query, bool& status);
+    static vector<vector<MultiBase*> > executeQuery(const string& query);
+
     static void clearQueryResult(vector<vector<MultiBase*> >& result);
+
     static bool executeUpdate(const string& update, string& message);
+    static bool executeUpdate(const string& update);
+
     static void commitUpdate(bool commit = true);
 };
 

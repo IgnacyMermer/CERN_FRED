@@ -51,22 +51,36 @@ bool DatabaseInterface::connect()
     return this->connection != NULL;
 }
 
-vector<vector<MultiBase*> > DatabaseInterface::executeQuery(const string &query, bool& status, string& message)
+bool DatabaseInterface::isConnected()
 {
-    status = true;
+    string message;
+    return DatabaseInterface::isConnected(message);
+}
+
+bool DatabaseInterface::isConnected(string& message)
+{
     message = "";
 
     if (!DatabaseInterface::instance)
     {
-        status = false;
         message = "database instance is null";
-        return vector<vector<MultiBase*> >();
+        return false;
     }
 
     if (!DatabaseInterface::instance->connection)
     {
-        status = false;
         message = "database connection not available";
+        return false;
+    }
+
+    return true;
+}
+
+vector<vector<MultiBase*> > DatabaseInterface::executeQuery(const string &query, bool& status, string& message)
+{
+    status = DatabaseInterface::isConnected(message);
+    if (!status)
+    {
         return vector<vector<MultiBase*> >();
     }
 
@@ -135,6 +149,19 @@ vector<vector<MultiBase*> > DatabaseInterface::executeQuery(const string &query,
     return vector<vector<MultiBase*> >();
 }
 
+vector<vector<MultiBase*> > DatabaseInterface::executeQuery(const string &query, bool& status)
+{
+    string message;
+    return DatabaseInterface::executeQuery(query, status, message);
+}
+
+vector<vector<MultiBase*> > DatabaseInterface::executeQuery(const string &query)
+{
+    string message;
+    bool status;
+    return DatabaseInterface::executeQuery(query, status, message);
+}
+
 void DatabaseInterface::clearQueryResult(vector<vector<MultiBase*> >& result)
 {
     for (size_t i = 0; i < result.size(); i++)
@@ -152,17 +179,9 @@ void DatabaseInterface::clearQueryResult(vector<vector<MultiBase*> >& result)
 
 bool DatabaseInterface::executeUpdate(const string& update, string& message)
 {
-    message = "";
-
-    if (!DatabaseInterface::instance)
+    bool status = DatabaseInterface::isConnected(message);
+    if (!status)
     {
-        message = "database instance is null";
-        return false;
-    }
-
-    if (!DatabaseInterface::instance->connection)
-    {
-        message = "database connection not available";
         return false;
     }
 
@@ -183,14 +202,16 @@ bool DatabaseInterface::executeUpdate(const string& update, string& message)
     return false;
 }
 
+bool DatabaseInterface::executeUpdate(const string& update)
+{
+    string message;
+    return DatabaseInterface::executeUpdate(update, message);
+}
+
 void DatabaseInterface::commitUpdate(bool commit)
 {
-    if (!DatabaseInterface::instance)
-    {
-        return;
-    }
-
-    if (!DatabaseInterface::instance->connection)
+    bool status = DatabaseInterface::isConnected();
+    if (!status)
     {
         return;
     }
