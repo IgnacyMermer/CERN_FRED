@@ -44,12 +44,6 @@ void Queue::clearQueue(Queue *queue)
                 request = queue->stack.front();
                 queue->stack.pop_front();
             }
-
-            if (queue->stack.size() > 10)
-            {
-                Print::PrintWarning("Stack " + queue->id + " size is " + to_string(queue->stack.size()));
-            }
-
             //do processing
             AlfRpcInfo* alfLink = request.first->getUseCru() ? request.second->alfLink.first : request.second->alfLink.second;
             alfLink->setTransaction(request);  //CAN bus backup
