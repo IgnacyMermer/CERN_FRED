@@ -17,6 +17,7 @@ ALFRED::ALFRED(string server, string dns, string network)
 	this->server = server;
 	this->dns = dns;
 	this->network = network;
+	this->frontend = NULL;
 
 	setenv("DIM_HOST_NODE", network == "" ? GetHost().c_str() : GetIP().c_str(), 1);
     setenv("DIM_DNS_NODE", dns.c_str(), 1);
@@ -78,7 +79,7 @@ void ALFRED::RegisterService(string name, DIM_TYPE type, size_t size, string for
 {
 	if (type == DIM_TYPE::DATA && size == 0)
 	{
-		PrintError("Invalid size of servis!");
+        Print::PrintError("Invalid size of servis!");
 		exit(EXIT_FAILURE);
 	}
 
@@ -97,7 +98,7 @@ void ALFRED::RegisterService(string name, DIM_TYPE type, size_t size, string for
 			services[name] = new ServiceData(name, this, size, format);
 			break;
 		default:
-			PrintError("Invalid service type!");
+            Print::PrintError("Invalid service type!");
 			exit(EXIT_FAILURE);
 	}
 }
@@ -119,7 +120,7 @@ void ALFRED::RegisterCommand(string name, DIM_TYPE type, string format)
 			commands[name] = new CommandData(name, format, this);
 			break;
 		default:
-			PrintError("Invalid command type!");
+            Print::PrintError("Invalid command type!");
 			exit(EXIT_FAILURE);
 	}
 }
@@ -141,7 +142,7 @@ void ALFRED::RegisterInfo(string name, DIM_TYPE type)
 			infos[name] = new InfoData(name, this);
 			break;
 		default:
-			PrintError("Invalid info type!");
+            Print::PrintError("Invalid info type!");
 			exit(EXIT_FAILURE);
 	}
 }
@@ -150,7 +151,7 @@ void ALFRED::RegisterClient(string name, DIM_TYPE type, size_t size)
 {
 	if (type == DIM_TYPE::DATA && size == 0)
 	{
-		PrintError("Invalid size of client!");
+        Print::PrintError("Invalid size of client!");
 		exit(EXIT_FAILURE);
 	}
 
@@ -169,7 +170,7 @@ void ALFRED::RegisterClient(string name, DIM_TYPE type, size_t size)
 			clients[name] = new ClientData(name, this, size);
 			break;
 		default:
-			PrintError("Invalid client type!");
+            Print::PrintError("Invalid client type!");
 			exit(EXIT_FAILURE);
 	}
 }
@@ -178,7 +179,7 @@ void ALFRED::RegisterRpc(string name, DIM_TYPE type, size_t size, string formatI
 {
     if (type == DIM_TYPE::DATA && size == 0)
     {
-        PrintError("Invalid size of rpc!");
+        Print::PrintError("Invalid size of rpc!");
         exit(EXIT_FAILURE);
     }
 
@@ -197,7 +198,7 @@ void ALFRED::RegisterRpc(string name, DIM_TYPE type, size_t size, string formatI
             rpcs[name] = new RpcData(name, this, size, formatIn, formatOut);
             break;
         default:
-            PrintError("Invalid rpc type!");
+            Print::PrintError("Invalid rpc type!");
             exit(EXIT_FAILURE);
     }
 }
@@ -206,7 +207,7 @@ void ALFRED::RegisterRpcInfo(string name, string dns, DIM_TYPE type, size_t size
 {
     if (type == DIM_TYPE::DATA && size == 0)
     {
-        PrintError("Invalid size of rpcinfo!");
+        Print::PrintError("Invalid size of rpcinfo!");
         exit(EXIT_FAILURE);
     }
 
@@ -225,7 +226,7 @@ void ALFRED::RegisterRpcInfo(string name, string dns, DIM_TYPE type, size_t size
             rpcinfos[name] = new RpcInfoData(name, dns, this, size);
             break;
         default:
-            PrintError("Invalid rpcinfo type!");
+            Print::PrintError("Invalid rpcinfo type!");
             exit(EXIT_FAILURE);
     }
 }
@@ -239,7 +240,7 @@ void ALFRED::RegisterCommand(Command* command)
 {
 	if (!command)
 	{
-		PrintError("Invalid command!");
+        Print::PrintError("Invalid command!");
 		exit(EXIT_FAILURE);
 	}
 	else
@@ -252,7 +253,7 @@ void ALFRED::RegisterService(Service* service)
 {
     if (!service)
     {
-        PrintError("Invalid service!");
+        Print::PrintError("Invalid service!");
         exit(EXIT_FAILURE);
     }
     else
@@ -265,7 +266,7 @@ void ALFRED::RegisterInfo(Info* info)
 {
 	if (!info)
 	{
-		PrintError("Invalid info!");
+        Print::PrintError("Invalid info!");
 		exit(EXIT_FAILURE);
 	}
 	else
@@ -278,7 +279,7 @@ void ALFRED::RegisterRpc(Rpc *rpc)
 {
     if (!rpc)
     {
-        PrintError("Invalid rpc!");
+        Print::PrintError("Invalid rpc!");
         exit(EXIT_FAILURE);
     }
     else
@@ -291,7 +292,7 @@ void ALFRED::RegisterRpcInfo(RpcInfo *rpcinfo)
 {
     if (!rpcinfo)
     {
-        PrintError("Invalid rpcinfo!");
+        Print::PrintError("Invalid rpcinfo!");
         exit(EXIT_FAILURE);
     }
     else
@@ -356,11 +357,11 @@ void ALFRED::Connect(CONNECT type, string source, string destination)
             ConnectRpcFnc(source, destination);
             break;
 		default:
-			PrintError("Invalid connect type!");
+            Print::PrintError("Invalid connect type!");
 			exit(EXIT_FAILURE);
 	}
 
-    PrintVerbose(source + " connected to " + destination);
+    Print::PrintVerbose(source + " connected to " + destination);
 }
 
 void ALFRED::Disconnect(CONNECT type, string source, string destination)
@@ -419,11 +420,11 @@ void ALFRED::Disconnect(CONNECT type, string source, string destination)
             ConnectRpcFnc(source, destination, false);
             break;
         default:
-            PrintError("Invalid connect type!");
+            Print::PrintError("Invalid connect type!");
             exit(EXIT_FAILURE);
     }
 
-    PrintVerbose(source + " disconnected from " + destination);
+    Print::PrintVerbose(source + " disconnected from " + destination);
 }
 
 void ALFRED::ConnectCmdSrv(string source, string destination, bool connect)
@@ -433,7 +434,7 @@ void ALFRED::ConnectCmdSrv(string source, string destination, bool connect)
 
     if (command->Type() != service->Type() && connect)
 	{
-		PrintWarning("Connecting different types of command and service!");
+        Print::PrintWarning("Connecting different types of command and service!");
 	}
 
     command->ConnectService(connect ? service : NULL);
@@ -446,7 +447,7 @@ void ALFRED::ConnectCmdFnc(string source, string destination, bool connect)
 
 	if (function->Type() != FNC_TYPE::SHOT)
 	{
-		PrintError("Cannot connect command to non-shot function!");
+        Print::PrintError("Cannot connect command to non-shot function!");
 		exit(EXIT_FAILURE);
 	}
 	else
@@ -470,7 +471,7 @@ void ALFRED::ConnectInfSrv(string source, string destination, bool connect)
 
     if (info->Type() != service->Type() && connect)
 	{
-		PrintWarning("Connecting different types of info and service!");
+        Print::PrintWarning("Connecting different types of info and service!");
 	}
 
     info->ConnectService(connect ? service : NULL);
@@ -483,7 +484,7 @@ void ALFRED::ConnectInfFnc(string source, string destination, bool connect)
 
 	if (function->Type() != FNC_TYPE::SHOT)
 	{
-		PrintError("Cannot connect info to non-shot function!");
+        Print::PrintError("Cannot connect info to non-shot function!");
 		exit(EXIT_FAILURE);
 	}
 	else
@@ -499,7 +500,7 @@ void ALFRED::ConnectCmdCnt(string source, string destination, bool connect)
 
     if (command->Type() != client->Type() && connect)
 	{
-		PrintWarning("Connecting different types of command and client!");
+        Print::PrintWarning("Connecting different types of command and client!");
 	}
 
     command->ConnectClient(connect ? client : NULL);
@@ -520,7 +521,7 @@ void ALFRED::ConnectInfCnt(string source, string destination, bool connect)
 
     if (info->Type() != client->Type() && connect)
 	{
-		PrintWarning("Connecting different types of info and client!");
+        Print::PrintWarning("Connecting different types of info and client!");
 	}
 
     info->ConnectClient(connect ? client : NULL);
@@ -533,7 +534,7 @@ void ALFRED::ConnectCmdRpcinf(string source, string destination, bool connect)
 
     if (command->Type() != rpcinfo->Type() && connect)
     {
-        PrintWarning("Connecting different types of command and rpcinfo!");
+        Print::PrintWarning("Connecting different types of command and rpcinfo!");
     }
 
     command->ConnectRpcInfo(connect ? rpcinfo : NULL);
@@ -554,7 +555,7 @@ void ALFRED::ConnectInfRpcinf(string source, string destination, bool connect)
 
     if (info->Type() != rpcinfo->Type() && connect)
     {
-        PrintWarning("Connecting different types of info and rpcinfo!");
+        Print::PrintWarning("Connecting different types of info and rpcinfo!");
     }
 
     info->ConnectRpcInfo(connect ? rpcinfo : NULL);
@@ -567,7 +568,7 @@ void ALFRED::ConnectRpcinfSrv(string source, string destination, bool connect)
 
     if (rpcinfo->Type() != service->Type() && connect)
     {
-        PrintWarning("Connecting different types of rpcinfo and service!");
+        Print::PrintWarning("Connecting different types of rpcinfo and service!");
     }
 
     rpcinfo->ConnectService(connect ? service : NULL);
@@ -580,7 +581,7 @@ void ALFRED::ConnectRpcinfCnt(string source, string destination, bool connect)
 
     if (rpcinfo->Type() != client->Type() && connect)
     {
-        PrintWarning("Connecting different types of rpcinfo and client!");
+        Print::PrintWarning("Connecting different types of rpcinfo and client!");
     }
 
     rpcinfo->ConnectClient(connect ? client : NULL);
@@ -593,7 +594,7 @@ void ALFRED::ConnectRpcinfFnc(string source, string destination, bool connect)
 
     if (function->Type() != FNC_TYPE::SHOT)
     {
-        PrintError("Cannot connect rpcinfo to non-shot function!");
+        Print::PrintError("Cannot connect rpcinfo to non-shot function!");
         exit(EXIT_FAILURE);
     }
     else
@@ -609,7 +610,7 @@ void ALFRED::ConnectRpcSrv(string source, string destination, bool connect)
 
     if (rpc->Type() != service->Type() && connect)
     {
-        PrintWarning("Connecting different types of rpc and service!");
+        Print::PrintWarning("Connecting different types of rpc and service!");
     }
 
     rpc->ConnectService(connect ? service : NULL);
@@ -622,7 +623,7 @@ void ALFRED::ConnectRpcCnt(string source, string destination, bool connect)
 
     if (rpc->Type() != client->Type() && connect)
     {
-        PrintWarning("Connecting different types of rpc and client!");
+        Print::PrintWarning("Connecting different types of rpc and client!");
     }
 
     rpc->ConnectClient(connect ? client : NULL);
@@ -635,7 +636,7 @@ void ALFRED::ConnectRpcFnc(string source, string destination, bool connect)
 
     if (function->Type() != FNC_TYPE::SHOT)
     {
-        PrintError("Cannot connect rpc to non-shot function!");
+        Print::PrintError("Cannot connect rpc to non-shot function!");
         exit(EXIT_FAILURE);
     }
     else
@@ -652,7 +653,7 @@ Service* ALFRED::GetService(string name)
 	}
 	else
 	{
-		PrintError(string("No service ") + name + " exists!");
+        Print::PrintError(string("No service ") + name + " exists!");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -665,7 +666,7 @@ Command* ALFRED::GetCommand(string name)
 	}
 	else
 	{
-		PrintError(string("No command ") + name + " exists!");
+        Print::PrintError(string("No command ") + name + " exists!");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -678,7 +679,7 @@ Info* ALFRED::GetInfo(string name)
 	}
 	else
 	{
-		PrintError(string("No info ") + name + " exists!");
+        Print::PrintError(string("No info ") + name + " exists!");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -691,7 +692,7 @@ Client* ALFRED::GetClient(string name)
 	}
 	else
 	{
-		PrintError(string("No client ") + name + " exists!");
+        Print::PrintError(string("No client ") + name + " exists!");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -700,7 +701,7 @@ Function* ALFRED::GetFunction(string name)
 {
 	if (!frontend)
 	{
-		PrintError("No FrontEnd defined!");
+        Print::PrintError("No FrontEnd defined!");
 		exit(EXIT_FAILURE);
 	}
 	else
@@ -717,7 +718,7 @@ Rpc* ALFRED::GetRpc(string name)
     }
     else
     {
-        PrintError(string("No rpc ") + name + " exists!");
+        Print::PrintError(string("No rpc ") + name + " exists!");
         exit(EXIT_FAILURE);
     }
 }
@@ -730,7 +731,7 @@ RpcInfo* ALFRED::GetRpcInfo(string name)
     }
     else
     {
-        PrintError(string("No rpcinfo ") + name + " exists!");
+        Print::PrintError(string("No rpcinfo ") + name + " exists!");
         exit(EXIT_FAILURE);
     }
 }
@@ -738,7 +739,7 @@ RpcInfo* ALFRED::GetRpcInfo(string name)
 void ALFRED::StartOnce()
 {
 	DimServer::start(server.c_str());
-	PrintInfo(string("Server ") + server + " started!");
+    Print::PrintInfo(string("Server ") + server + " started!");
 }
 
 void ALFRED::Start()
@@ -757,7 +758,7 @@ string ALFRED::GetIP()
 
 	if (!fpipe)
 	{
-		PrintError("Cannot get IP address!");
+        Print::PrintError("Cannot get IP address!");
 		exit(EXIT_FAILURE);
 	}
 	else
@@ -783,7 +784,7 @@ string ALFRED::GetHost()
 
 	if (!fpipe)
 	{
-		PrintError("Cannot get Hostname!");
+        Print::PrintError("Cannot get Hostname!");
 		exit(EXIT_FAILURE);
 	}
 	else

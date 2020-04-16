@@ -17,7 +17,7 @@ class Fred;
 class Queue
 {
 public:
-    Queue(string alfId, Fred* fred);
+    Queue(string alfId, int32_t serial, int32_t link, Fred* fred);
     ~Queue();
 
     void newRequest(pair<ProcessMessage *, ChainTopic *> request);
