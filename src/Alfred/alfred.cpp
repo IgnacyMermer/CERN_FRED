@@ -762,8 +762,8 @@ string ALFRED::GetIP()
 	}
 	else
 	{
-		char ip[17] = "\0";
-		fgets(ip, 16, fpipe);
+		char ip[41] = "\0";
+		fgets(ip, 40, fpipe);
 		pclose(fpipe);
 
 		char *endOfLine = strchr(ip, '\n');
