@@ -11,7 +11,6 @@
 using namespace std;
 
 class Service;
-class FunctionShot;
 class Client;
 class ALFRED;
 
@@ -21,14 +20,13 @@ protected:
     static vector<string> names;
     static void RemoveElement(const string& name);
 
-    DIM_TYPE type;
+    ALFRED_TYPES::DIM_TYPE type;
     string name;
     ALFRED* alfred;
 
     Rpc(string name, ALFRED* alfred);
 
     Service* serviceCallback;
-    FunctionShot* functionCallback;
     Client* clientCallback;
 
     virtual const void* Execution(void* value);
@@ -39,14 +37,12 @@ public:
     static bool AlreadyRegistered(const string& name);
 
     void ConnectService(Service* serviceCallback);
-    void ConnectFunction(FunctionShot* functionCallback);
     void ConnectClient(Client* clientCallback);
 
     void CallService(string name, void* value);
-    void CallFunction(string name, void* value);
     void CallClient(string name, void* value);
 
-    DIM_TYPE Type();
+    ALFRED_TYPES::DIM_TYPE Type();
     string Name();
     ALFRED* Parent();
 };
@@ -86,7 +82,7 @@ public:
 class RpcString: public Rpc, public DimRpc
 {
 private:
-    const char* value;
+    string value;
     char noLink[1];
 
     void rpcHandler();

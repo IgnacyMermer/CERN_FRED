@@ -28,6 +28,7 @@ public:
     Fred(bool parseOnly, string fredName, string fredDns, string mainDirectory);
     static pair<string, string> readConfigFile();
     static bool commandLineArguments(int argc, char** argv);
+    static void printHelp();
 
     AlfClients &getAlfClients();
     FredTopics &getFredTopics();

@@ -12,7 +12,6 @@
 using namespace std;
 
 class Service;
-class FunctionShot;
 class Client;
 class ALFRED;
 
@@ -23,14 +22,13 @@ protected:
     static void RemoveElement(const string& name, const string& dns);
 
     DimRpcInfo* rpcInfo;
-    DIM_TYPE type;
+    ALFRED_TYPES::DIM_TYPE type;
     string name, dns;
     ALFRED* alfred;
 
     RpcInfo(string name, string dns, ALFRED* alfred);
 
     Service* serviceCallback;
-    FunctionShot* functionCallback;
     Client* clientCallback;
 
     virtual const void* Execution(void* value);
@@ -41,14 +39,12 @@ public:
     static bool AlreadyRegistered(const string& name, const string& dns);
 
     void ConnectService(Service* serviceCallback);
-    void ConnectFunction(FunctionShot* functionCallback);
     void ConnectClient(Client* clientCallback);
 
     void CallService(string name, void* value);
-    void CallFunction(string name, void* value);
     void CallClient(string name, void* value);
 
-    DIM_TYPE Type();
+    ALFRED_TYPES::DIM_TYPE Type();
     string Name();
     string Dns();
     ALFRED* Parent();

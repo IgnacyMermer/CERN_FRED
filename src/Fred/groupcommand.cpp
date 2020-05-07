@@ -41,7 +41,7 @@ const void* GroupCommand::Execution(void *value)
         {
             string error = "Required ALF/CANALF not available!";
             Print::PrintError(name, error);
-            topic->error->Update(error.c_str());
+            topic->error->Update(error);
             Print::PrintError(topic->name, "Updating error service!");
             delete processMessage;
             return NULL;
@@ -82,12 +82,12 @@ void GroupCommand::processRequest(GroupCommand* command)
 
         if (command->groupError) 
         {           
-            command->topic->error->Update(response.c_str()); //_ERR
+            command->topic->error->Update(response); //_ERR
             Print::PrintError(command->topic->name, "Updating group error service!");
         }
         else
         {
-            command->topic->service->Update(response.c_str()); //_ANS
+            command->topic->service->Update(response); //_ANS
             Print::PrintVerbose(command->topic->name, "Updating group service!");
         }
         

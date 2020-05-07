@@ -28,7 +28,7 @@ const void* SelectCommand::Execution(void* value)
     }
 
     Print::PrintVerbose(name, "Received command to switch to: " + request);
-    this->service->Update(request.c_str());
+    this->service->Update(request);
 
     bool useCru = request == "ALF";
     for (size_t  i = 0; i < this->unitCommands.size(); i++)

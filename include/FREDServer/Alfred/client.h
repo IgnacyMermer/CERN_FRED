@@ -15,7 +15,7 @@ class ALFRED;
 class Client
 {
 protected:
-	DIM_TYPE type;
+    ALFRED_TYPES::DIM_TYPE type;
 	ALFRED* alfred;
 
 	string name;
@@ -32,7 +32,7 @@ public:
 	
 	void Send(void* value);
 
-	DIM_TYPE Type();
+    ALFRED_TYPES::DIM_TYPE Type();
 	string Name();
 	ALFRED* Parent();
 };

@@ -32,7 +32,7 @@ void Client::RemoveElement(const string& name)
 Client::Client(string name, ALFRED* alfred)
 {
 	this->name = name;
-	type = DIM_TYPE::NONE;
+    type = ALFRED_TYPES::DIM_TYPE::NONE;
 
 	if (!alfred)
 	{
@@ -62,16 +62,16 @@ void Client::Send(void* value)
 {
 	switch (type)
 	{
-		case DIM_TYPE::INT:
+        case ALFRED_TYPES::DIM_TYPE::INT:
 			((ClientInt*)this)->Send(*(int*)value);
 			break;
-		case DIM_TYPE::FLOAT:
+        case ALFRED_TYPES::DIM_TYPE::FLOAT:
 			((ClientFloat*)this)->Send(*(float*)value);
 			break;
-        case DIM_TYPE::STRING:
+        case ALFRED_TYPES::DIM_TYPE::STRING:
             ((ClientString*)this)->Send((const char*)value);
             break;
-		case DIM_TYPE::DATA:
+        case ALFRED_TYPES::DIM_TYPE::DATA:
 			((ClientData*)this)->Send(value, size);
 			break;
 		default:
@@ -80,7 +80,7 @@ void Client::Send(void* value)
 	}
 }
 
-DIM_TYPE Client::Type()
+ALFRED_TYPES::DIM_TYPE Client::Type()
 {
 	return type;
 }
@@ -99,8 +99,8 @@ ALFRED* Client::Parent()
 
 ClientInt::ClientInt(string name, ALFRED* alfred): Client::Client(name, alfred)
 {
-	size = 4;
-	type = DIM_TYPE::INT;
+    size = sizeof(int);
+    type = ALFRED_TYPES::DIM_TYPE::INT;
 
     Print::PrintVerbose(string("Client ") + name + " registered!");
 }
@@ -119,8 +119,8 @@ void ClientInt::Send(int value)
 
 ClientFloat::ClientFloat(string name, ALFRED* alfred): Client::Client(name, alfred)
 {
-	size = 4;
-	type = DIM_TYPE::FLOAT;
+    size = sizeof(float);
+    type = ALFRED_TYPES::DIM_TYPE::FLOAT;
 
     Print::PrintVerbose(string("Client ") + name + " registered!");
 }
@@ -139,7 +139,7 @@ void ClientFloat::Send(float value)
 
 ClientString::ClientString(string name, ALFRED* alfred): Client::Client(name, alfred)
 {
-    type = DIM_TYPE::STRING;
+    type = ALFRED_TYPES::DIM_TYPE::STRING;
 
     Print::PrintVerbose(string("Client ") + name + " registered!");
 }
@@ -159,7 +159,7 @@ void ClientString::Send(const char* value)
 ClientData::ClientData(string name, ALFRED* alfred, size_t size): Client::Client(name, alfred)
 {
 	this->size = size;
-	type = DIM_TYPE::DATA;
+    type = ALFRED_TYPES::DIM_TYPE::DATA;
 
     Print::PrintVerbose(string("Client ") + name + " registered!");
 }

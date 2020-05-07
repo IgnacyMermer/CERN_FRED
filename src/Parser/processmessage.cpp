@@ -265,7 +265,7 @@ void ProcessMessage::updateResponse(ChainTopic& chainTopic, string response, boo
     {
         if (groupCommand == NULL)
         {
-            chainTopic.error->Update(response.c_str());
+            chainTopic.error->Update(response);
             Print::PrintError(chainTopic.name, "Updating error service!");
         }
         else groupCommand->receivedResponse(&chainTopic, response, true);
@@ -274,7 +274,7 @@ void ProcessMessage::updateResponse(ChainTopic& chainTopic, string response, boo
     {
         if (groupCommand == NULL)
         {
-            chainTopic.service->Update(response.c_str());
+            chainTopic.service->Update(response);
             Print::PrintVerbose(chainTopic.name, "Updating service");
         }
         else groupCommand->receivedResponse(&chainTopic, response, false);        
@@ -418,24 +418,30 @@ void ProcessMessage::evaluateMessage(string message, ChainTopic &chainTopic, boo
 
 string ProcessMessage::generateMapiMessage()
 {
+    this->pollPattern.clear();
+    this->pollPattern.push_back("");
     return mapi->processInputMessage(this->fullMessage);
 }
 
 void ProcessMessage::evaluateMapiMessage(string message, ChainTopic& chainTopic)
 {
     string response = mapi->processOutputMessage(message);
+    if (mapi->customMessageProcess())
+    {
+        return;
+    }
 
     if (!mapi->noReturn)
     {
         if (mapi->returnError)
         {
-            chainTopic.error->Update(response.c_str());
+            chainTopic.error->Update(response);
             Print::PrintError(chainTopic.name, "Updating MAPI error service!");
             mapi->returnError = false; //reset returnError
         }
         else
         {
-            chainTopic.service->Update(response.c_str());
+            chainTopic.service->Update(response);
             Print::PrintVerbose(chainTopic.name, "Updating MAPI service");
         }
     }

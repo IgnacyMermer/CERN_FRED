@@ -31,11 +31,10 @@ void Service::RemoveElement(const string& name)
 
 Service::Service(string name, ALFRED* alfred)
 {
-	value = NULL;
 	service = NULL;
 	this->name = name;
 
-	type = DIM_TYPE::NONE;
+    type = ALFRED_TYPES::DIM_TYPE::NONE;
 
 	if (!alfred)
 	{
@@ -61,53 +60,34 @@ Service::~Service()
 	RemoveElement(Name());
 }
 
-void* Service::GetValuePnt()
-{
-	if (!value)
-	{
-        Print::PrintError("Accessing invalid pointer!");
-		exit(EXIT_FAILURE);
-	}
-
-	return value;
-}
-
 size_t Service::GetValueSize()
 {
 	return size;
 }
 
-void Service::Update()
-{
-	if (!service)
-	{
-        Print::PrintError("Accessing invalid pointer!");
-		exit(EXIT_FAILURE);
-	}
-
-	service->updateService();
-}
-
 void Service::Update(const void* value)
 {
-    if (type == DIM_TYPE::STRING)
+    switch (type)
     {
-        memcpy(this->value, value, strlen((char*)value) + 1);
-        service->updateService((char*)this->value);
-        return;
+        case ALFRED_TYPES::DIM_TYPE::INT:
+            ((ServiceInt*)this)->Update(*(int*)value);
+            break;
+        case ALFRED_TYPES::DIM_TYPE::FLOAT:
+            ((ServiceFloat*)this)->Update(*(float*)value);
+            break;
+        case ALFRED_TYPES::DIM_TYPE::STRING:
+            ((ServiceString*)this)->Update((const char*)value);
+            break;
+        case ALFRED_TYPES::DIM_TYPE::DATA:
+            ((ServiceData*)this)->Update(value);
+            break;
+        default:
+            Print::PrintError("Invalid type of service!");
+            exit(EXIT_FAILURE);
     }
-
-	if (!this->value || !value)
-	{
-        Print::PrintWarning(string("Service ") + Name() + " not valid data!");
-		return;
-	}
-
-	memcpy(this->value, value, size);
-	Update();
 }
 
-DIM_TYPE Service::Type()
+ALFRED_TYPES::DIM_TYPE Service::Type()
 {
 	return type;
 }
@@ -127,9 +107,9 @@ ALFRED* Service::Parent()
 ServiceInt::ServiceInt(string name, ALFRED* alfred): Service::Service(name, alfred)
 {
 	size = sizeof(int);
-	value = (void*)new int;
-	service = new DimService(name.c_str(), *(int*)value);
-	type = DIM_TYPE::INT;
+    value = 0;
+    service = new DimService(name.c_str(), value);
+    type = ALFRED_TYPES::DIM_TYPE::INT;
 
     Print::PrintVerbose(string("Service ") + name + " registered!");
 }
@@ -137,7 +117,12 @@ ServiceInt::ServiceInt(string name, ALFRED* alfred): Service::Service(name, alfr
 ServiceInt::~ServiceInt()
 {
 	delete service;
-	delete (int*)value;
+}
+
+void ServiceInt::Update(int value)
+{
+    this->value = value;
+    service->updateService();
 }
 
 /*----------------------------------------------------------------------------------------------*/
@@ -145,9 +130,9 @@ ServiceInt::~ServiceInt()
 ServiceFloat::ServiceFloat(string name, ALFRED* alfred): Service::Service(name, alfred)
 {
 	size = sizeof(float);
-	value = (void*)new float;
-	service = new DimService(name.c_str(), *(float*)value);
-	type = DIM_TYPE::FLOAT;
+    value = 0.0;
+    service = new DimService(name.c_str(), value);
+    type = ALFRED_TYPES::DIM_TYPE::FLOAT;
 
     Print::PrintVerbose(string("Service ") + name + " registered!");
 }
@@ -155,16 +140,21 @@ ServiceFloat::ServiceFloat(string name, ALFRED* alfred): Service::Service(name, 
 ServiceFloat::~ServiceFloat()
 {
 	delete service;
-	delete (float*)value;
+}
+
+void ServiceFloat::Update(float value)
+{
+    this->value = value;
+    service->updateService();
 }
 
 /*----------------------------------------------------------------------------------------------*/
 
 ServiceString::ServiceString(string name, ALFRED* alfred): Service::Service(name, alfred)
 {
-    value = (void*)new char[102400];
-    service = new DimService(name.c_str(), (char*)value);
-    type = DIM_TYPE::STRING;
+    value = "";
+    service = new DimService(name.c_str(), const_cast<char*>(value.c_str()));
+    type = ALFRED_TYPES::DIM_TYPE::STRING;
 
     Print::PrintVerbose(string("Service ") + name + " registered!");
 }
@@ -172,7 +162,12 @@ ServiceString::ServiceString(string name, ALFRED* alfred): Service::Service(name
 ServiceString::~ServiceString()
 {
     delete service;
-    delete (char*)value;
+}
+
+void ServiceString::Update(string value)
+{
+    this->value = value;
+    service->updateService(const_cast<char*>(this->value.c_str()));
 }
 
 /*----------------------------------------------------------------------------------------------*/
@@ -182,7 +177,7 @@ ServiceData::ServiceData(string name, ALFRED* alfred, size_t size, string format
 	this->size = size;
 	value = (void*)new uint8_t[size];
 	service = new DimService(name.c_str(), format.c_str(), value, size);
-	type = DIM_TYPE::DATA;
+    type = ALFRED_TYPES::DIM_TYPE::DATA;
 
     Print::PrintVerbose(string("Service ") + name + " registered!");
 }
@@ -191,4 +186,10 @@ ServiceData::~ServiceData()
 {
 	delete service;
 	delete[] (uint8_t*)value;
+}
+
+void ServiceData::Update(const void *value)
+{
+    memcpy(this->value, value, this->size);
+    service->updateService();
 }

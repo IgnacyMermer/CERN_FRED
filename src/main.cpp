@@ -5,13 +5,12 @@
 #include <stdio.h>
 #include <fstream>
 #include "Fred/fred.h"
-#include "Fred/global.h"
 #include "Alfred/print.h"
 //#include "Mapi/mapiexample.h"
 
 int main(int argc, char** argv)
 {
-	parseOnly = Fred::commandLineArguments(argc, argv);
+    bool parseOnly = Fred::commandLineArguments(argc, argv);
 	pair<string, string> config = Fred::readConfigFile();
 	Fred fred(parseOnly, config.first, config.second, "./sections");
 

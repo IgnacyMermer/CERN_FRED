@@ -3,21 +3,16 @@
 #include "Alfred/service.h"
 #include "Alfred/command.h"
 #include "Alfred/client.h"
-#include "Alfred/frontend.h"
 #include "Alfred/info.h"
 #include "Alfred/rpc.h"
 #include "Alfred/rpcinfo.h"
-#include "Fred/dimutilities.h"
-#include "Fred/global.h"
+#include "Alfred/dimutilities.h"
 
-ALFRED::ALFRED(string server, string dns, string network)
+ALFRED::ALFRED(string server, string dns, bool parseOnly, string network)
 {
-    extern bool parseOnly;
-    
 	this->server = server;
 	this->dns = dns;
 	this->network = network;
-	this->frontend = NULL;
 
 	setenv("DIM_HOST_NODE", network == "" ? GetHost().c_str() : GetIP().c_str(), 1);
     setenv("DIM_DNS_NODE", dns.c_str(), 1);
@@ -26,12 +21,12 @@ ALFRED::ALFRED(string server, string dns, string network)
     {
         if (!DimUtilities::dimDnsIsUp(dns))
         {
-            PrintError("DIM DNS " + dns + " is NOT UP!");
+            Print::PrintError("DIM DNS " + dns + " is NOT UP!");
             exit(EXIT_FAILURE);
         }
         else if (ServerRegistered(server))
     	{
-    		PrintError(string("Server ") + server + " is already registered on DIM DNS!");
+            Print::PrintError(string("Server ") + server + " is already registered on DIM DNS!");
             exit(EXIT_FAILURE);
     	}
     }
@@ -39,11 +34,6 @@ ALFRED::ALFRED(string server, string dns, string network)
 
 ALFRED::~ALFRED()
 {
-	if (frontend)
-	{
-		delete frontend;
-	}
-
 	for (auto it = services.begin(); it !=services.end(); it++)
 	{
 		delete it->second;
@@ -75,9 +65,9 @@ ALFRED::~ALFRED()
     }
 }
 
-void ALFRED::RegisterService(string name, DIM_TYPE type, size_t size, string format)
+void ALFRED::RegisterService(string name, ALFRED_TYPES::DIM_TYPE type, size_t size, string format)
 {
-	if (type == DIM_TYPE::DATA && size == 0)
+    if (type == ALFRED_TYPES::DIM_TYPE::DATA && size == 0)
 	{
         Print::PrintError("Invalid size of servis!");
 		exit(EXIT_FAILURE);
@@ -85,16 +75,16 @@ void ALFRED::RegisterService(string name, DIM_TYPE type, size_t size, string for
 
 	switch (type)
 	{
-		case DIM_TYPE::INT:
+        case ALFRED_TYPES::DIM_TYPE::INT:
 			services[name] = new ServiceInt(name, this);
 			break;
-		case DIM_TYPE::FLOAT:
+        case ALFRED_TYPES::DIM_TYPE::FLOAT:
 			services[name] = new ServiceFloat(name, this);
 			break;
-        case DIM_TYPE::STRING:
+        case ALFRED_TYPES::DIM_TYPE::STRING:
             services[name] = new ServiceString(name, this);
             break;
-		case DIM_TYPE::DATA:
+        case ALFRED_TYPES::DIM_TYPE::DATA:
 			services[name] = new ServiceData(name, this, size, format);
 			break;
 		default:
@@ -103,20 +93,20 @@ void ALFRED::RegisterService(string name, DIM_TYPE type, size_t size, string for
 	}
 }
 
-void ALFRED::RegisterCommand(string name, DIM_TYPE type, string format)
+void ALFRED::RegisterCommand(string name, ALFRED_TYPES::DIM_TYPE type, string format)
 {
 	switch (type)
 	{
-		case DIM_TYPE::INT:
+        case ALFRED_TYPES::DIM_TYPE::INT:
 			commands[name] = new CommandInt(name, this);
 			break;
-		case DIM_TYPE::FLOAT:
+        case ALFRED_TYPES::DIM_TYPE::FLOAT:
 			commands[name] = new CommandFloat(name, this);
 			break;
-        case DIM_TYPE::STRING:
+        case ALFRED_TYPES::DIM_TYPE::STRING:
             commands[name] = new CommandString(name, this);
             break;
-		case DIM_TYPE::DATA:
+        case ALFRED_TYPES::DIM_TYPE::DATA:
 			commands[name] = new CommandData(name, format, this);
 			break;
 		default:
@@ -125,20 +115,20 @@ void ALFRED::RegisterCommand(string name, DIM_TYPE type, string format)
 	}
 }
 
-void ALFRED::RegisterInfo(string name, DIM_TYPE type)
+void ALFRED::RegisterInfo(string name, ALFRED_TYPES::DIM_TYPE type)
 {
 	switch (type)
 	{
-		case DIM_TYPE::INT:
+        case ALFRED_TYPES::DIM_TYPE::INT:
 			infos[name] = new InfoInt(name, this);
 			break;
-		case DIM_TYPE::FLOAT:
+        case ALFRED_TYPES::DIM_TYPE::FLOAT:
 			infos[name] = new InfoFloat(name, this);
 			break;
-        case DIM_TYPE::STRING:
+        case ALFRED_TYPES::DIM_TYPE::STRING:
             infos[name] = new InfoString(name, this);
             break;
-		case DIM_TYPE::DATA:
+        case ALFRED_TYPES::DIM_TYPE::DATA:
 			infos[name] = new InfoData(name, this);
 			break;
 		default:
@@ -147,9 +137,9 @@ void ALFRED::RegisterInfo(string name, DIM_TYPE type)
 	}
 }
 
-void ALFRED::RegisterClient(string name, DIM_TYPE type, size_t size)
+void ALFRED::RegisterClient(string name, ALFRED_TYPES::DIM_TYPE type, size_t size)
 {
-	if (type == DIM_TYPE::DATA && size == 0)
+    if (type == ALFRED_TYPES::DIM_TYPE::DATA && size == 0)
 	{
         Print::PrintError("Invalid size of client!");
 		exit(EXIT_FAILURE);
@@ -157,16 +147,16 @@ void ALFRED::RegisterClient(string name, DIM_TYPE type, size_t size)
 
 	switch (type)
 	{
-		case DIM_TYPE::INT:
+        case ALFRED_TYPES::DIM_TYPE::INT:
 			clients[name] = new ClientInt(name, this);
 			break;
-		case DIM_TYPE::FLOAT:
+        case ALFRED_TYPES::DIM_TYPE::FLOAT:
 			clients[name] = new ClientFloat(name, this);
 			break;
-        case DIM_TYPE::STRING:
+        case ALFRED_TYPES::DIM_TYPE::STRING:
             clients[name] = new ClientString(name, this);
             break;
-		case DIM_TYPE::DATA:
+        case ALFRED_TYPES::DIM_TYPE::DATA:
 			clients[name] = new ClientData(name, this, size);
 			break;
 		default:
@@ -175,9 +165,9 @@ void ALFRED::RegisterClient(string name, DIM_TYPE type, size_t size)
 	}
 }
 
-void ALFRED::RegisterRpc(string name, DIM_TYPE type, size_t size, string formatIn, string formatOut)
+void ALFRED::RegisterRpc(string name, ALFRED_TYPES::DIM_TYPE type, size_t size, string formatIn, string formatOut)
 {
-    if (type == DIM_TYPE::DATA && size == 0)
+    if (type == ALFRED_TYPES::DIM_TYPE::DATA && size == 0)
     {
         Print::PrintError("Invalid size of rpc!");
         exit(EXIT_FAILURE);
@@ -185,16 +175,16 @@ void ALFRED::RegisterRpc(string name, DIM_TYPE type, size_t size, string formatI
 
     switch (type)
     {
-        case DIM_TYPE::INT:
+        case ALFRED_TYPES::DIM_TYPE::INT:
             rpcs[name] = new RpcInt(name, this);
             break;
-        case DIM_TYPE::FLOAT:
+        case ALFRED_TYPES::DIM_TYPE::FLOAT:
             rpcs[name] = new RpcFloat(name, this);
             break;
-        case DIM_TYPE::STRING:
+        case ALFRED_TYPES::DIM_TYPE::STRING:
             rpcs[name] = new RpcString(name, this);
             break;
-        case DIM_TYPE::DATA:
+        case ALFRED_TYPES::DIM_TYPE::DATA:
             rpcs[name] = new RpcData(name, this, size, formatIn, formatOut);
             break;
         default:
@@ -203,9 +193,9 @@ void ALFRED::RegisterRpc(string name, DIM_TYPE type, size_t size, string formatI
     }
 }
 
-void ALFRED::RegisterRpcInfo(string name, string dns, DIM_TYPE type, size_t size)
+void ALFRED::RegisterRpcInfo(string name, string dns, ALFRED_TYPES::DIM_TYPE type, size_t size)
 {
-    if (type == DIM_TYPE::DATA && size == 0)
+    if (type == ALFRED_TYPES::DIM_TYPE::DATA && size == 0)
     {
         Print::PrintError("Invalid size of rpcinfo!");
         exit(EXIT_FAILURE);
@@ -213,27 +203,22 @@ void ALFRED::RegisterRpcInfo(string name, string dns, DIM_TYPE type, size_t size
 
     switch (type)
     {
-        case DIM_TYPE::INT:
+        case ALFRED_TYPES::DIM_TYPE::INT:
             rpcinfos[name] = new RpcInfoInt(name, dns, this);
             break;
-        case DIM_TYPE::FLOAT:
+        case ALFRED_TYPES::DIM_TYPE::FLOAT:
             rpcinfos[name] = new RpcInfoFloat(name, dns, this);
             break;
-        case DIM_TYPE::STRING:
+        case ALFRED_TYPES::DIM_TYPE::STRING:
             rpcinfos[name] = new RpcInfoString(name, dns, this);
             break;
-        case DIM_TYPE::DATA:
+        case ALFRED_TYPES::DIM_TYPE::DATA:
             rpcinfos[name] = new RpcInfoData(name, dns, this, size);
             break;
         default:
             Print::PrintError("Invalid rpcinfo type!");
             exit(EXIT_FAILURE);
     }
-}
-
-void ALFRED::RegisterFrontend(FrontEnd* frontend)
-{
-	this->frontend = frontend;
 }
 
 void ALFRED::RegisterCommand(Command* command)
@@ -301,60 +286,39 @@ void ALFRED::RegisterRpcInfo(RpcInfo *rpcinfo)
     }
 }
 
-void ALFRED::Connect(CONNECT type, string source, string destination)
+void ALFRED::Connect(ALFRED_TYPES::CONNECT type, string source, string destination)
 {
 	switch (type)
 	{
-		case CONNECT::COMMAND_SERVICE:
+        case ALFRED_TYPES::CONNECT::COMMAND_SERVICE:
 			ConnectCmdSrv(source, destination);
 			break;
-		case CONNECT::COMMAND_FUNCTION:
-			ConnectCmdFnc(source, destination);
-			break;
-		case CONNECT::FUNCTION_SERVICE:
-			ConnectFncSrv(source, destination);
-			break;
-		case CONNECT::INFO_SERVICE:
+        case ALFRED_TYPES::CONNECT::INFO_SERVICE:
 			ConnectInfSrv(source, destination);
 			break;
-		case CONNECT::INFO_FUNCTION:
-			ConnectInfFnc(source, destination);
-			break;
-		case CONNECT::COMMAND_CLIENT:
+        case ALFRED_TYPES::CONNECT::COMMAND_CLIENT:
 			ConnectCmdCnt(source, destination);
 			break;
-		case CONNECT::FUNCTION_CLIENT:
-			ConnectFncCnt(source, destination);
-			break;
-		case CONNECT::INFO_CLIENT:
+        case ALFRED_TYPES::CONNECT::INFO_CLIENT:
 			ConnectInfCnt(source, destination);
 			break;
-        case CONNECT::COMMAND_RPCINFO:
+        case ALFRED_TYPES::CONNECT::COMMAND_RPCINFO:
             ConnectCmdRpcinf(source, destination);
             break;
-        case CONNECT::FUNCTION_RPCINFO:
-            ConnectFncRpcinf(source, destination);
-            break;
-        case CONNECT::INFO_RPCINFO:
+        case ALFRED_TYPES::CONNECT::INFO_RPCINFO:
             ConnectInfRpcinf(source, destination);
             break;
-        case CONNECT::RPCINFO_SERVICE:
+        case ALFRED_TYPES::CONNECT::RPCINFO_SERVICE:
             ConnectRpcinfSrv(source, destination);
             break;
-        case CONNECT::RPCINFO_CLIENT:
+        case ALFRED_TYPES::CONNECT::RPCINFO_CLIENT:
             ConnectRpcinfCnt(source, destination);
             break;
-        case CONNECT::RPCINFO_FUNCTION:
-            ConnectRpcinfFnc(source, destination);
-            break;
-        case CONNECT::RPC_SERVICE:
+        case ALFRED_TYPES::CONNECT::RPC_SERVICE:
             ConnectRpcSrv(source, destination);
             break;
-        case CONNECT::RPC_CLIENT:
+        case ALFRED_TYPES::CONNECT::RPC_CLIENT:
             ConnectRpcCnt(source, destination);
-            break;
-        case CONNECT::RPC_FUNCTION:
-            ConnectRpcFnc(source, destination);
             break;
 		default:
             Print::PrintError("Invalid connect type!");
@@ -364,60 +328,39 @@ void ALFRED::Connect(CONNECT type, string source, string destination)
     Print::PrintVerbose(source + " connected to " + destination);
 }
 
-void ALFRED::Disconnect(CONNECT type, string source, string destination)
+void ALFRED::Disconnect(ALFRED_TYPES::CONNECT type, string source, string destination)
 {
     switch (type)
     {
-        case CONNECT::COMMAND_SERVICE:
+        case ALFRED_TYPES::CONNECT::COMMAND_SERVICE:
             ConnectCmdSrv(source, destination, false);
             break;
-        case CONNECT::COMMAND_FUNCTION:
-            ConnectCmdFnc(source, destination, false);
-            break;
-        case CONNECT::FUNCTION_SERVICE:
-            ConnectFncSrv(source, destination, false);
-            break;
-        case CONNECT::INFO_SERVICE:
+        case ALFRED_TYPES::CONNECT::INFO_SERVICE:
             ConnectInfSrv(source, destination, false);
             break;
-        case CONNECT::INFO_FUNCTION:
-            ConnectInfFnc(source, destination, false);
-            break;
-        case CONNECT::COMMAND_CLIENT:
+        case ALFRED_TYPES::CONNECT::COMMAND_CLIENT:
             ConnectCmdCnt(source, destination, false);
             break;
-        case CONNECT::FUNCTION_CLIENT:
-            ConnectFncCnt(source, destination, false);
-            break;
-        case CONNECT::INFO_CLIENT:
+        case ALFRED_TYPES::CONNECT::INFO_CLIENT:
             ConnectInfCnt(source, destination, false);
             break;
-        case CONNECT::COMMAND_RPCINFO:
+        case ALFRED_TYPES::CONNECT::COMMAND_RPCINFO:
             ConnectCmdRpcinf(source, destination, false);
             break;
-        case CONNECT::FUNCTION_RPCINFO:
-            ConnectFncRpcinf(source, destination, false);
-            break;
-        case CONNECT::INFO_RPCINFO:
+        case ALFRED_TYPES::CONNECT::INFO_RPCINFO:
             ConnectInfRpcinf(source, destination, false);
             break;
-        case CONNECT::RPCINFO_SERVICE:
+        case ALFRED_TYPES::CONNECT::RPCINFO_SERVICE:
             ConnectRpcinfSrv(source, destination, false);
             break;
-        case CONNECT::RPCINFO_CLIENT:
+        case ALFRED_TYPES::CONNECT::RPCINFO_CLIENT:
             ConnectRpcinfCnt(source, destination, false);
             break;
-        case CONNECT::RPCINFO_FUNCTION:
-            ConnectRpcinfFnc(source, destination, false);
-            break;
-        case CONNECT::RPC_SERVICE:
+        case ALFRED_TYPES::CONNECT::RPC_SERVICE:
             ConnectRpcSrv(source, destination, false);
             break;
-        case CONNECT::RPC_CLIENT:
+        case ALFRED_TYPES::CONNECT::RPC_CLIENT:
             ConnectRpcCnt(source, destination, false);
-            break;
-        case CONNECT::RPC_FUNCTION:
-            ConnectRpcFnc(source, destination, false);
             break;
         default:
             Print::PrintError("Invalid connect type!");
@@ -440,30 +383,6 @@ void ALFRED::ConnectCmdSrv(string source, string destination, bool connect)
     command->ConnectService(connect ? service : NULL);
 }
 
-void ALFRED::ConnectCmdFnc(string source, string destination, bool connect)
-{
-	Command* command = GetCommand(source);
-	Function* function = GetFunction(destination);
-
-	if (function->Type() != FNC_TYPE::SHOT)
-	{
-        Print::PrintError("Cannot connect command to non-shot function!");
-		exit(EXIT_FAILURE);
-	}
-	else
-	{
-        command->ConnectFunction(connect ? (FunctionShot*)function : NULL);
-	}
-}
-
-void ALFRED::ConnectFncSrv(string source, string destination, bool connect)
-{
-	Function* function = GetFunction(source);
-	Service* service = GetService(destination);
-
-    function->ConnectService(connect ? service : NULL);
-}
-
 void ALFRED::ConnectInfSrv(string source, string destination, bool connect)
 {
 	Info* info = GetInfo(source);
@@ -477,22 +396,6 @@ void ALFRED::ConnectInfSrv(string source, string destination, bool connect)
     info->ConnectService(connect ? service : NULL);
 }
 
-void ALFRED::ConnectInfFnc(string source, string destination, bool connect)
-{
-	Info* info = GetInfo(source);
-	Function* function = GetFunction(destination);
-
-	if (function->Type() != FNC_TYPE::SHOT)
-	{
-        Print::PrintError("Cannot connect info to non-shot function!");
-		exit(EXIT_FAILURE);
-	}
-	else
-	{
-        info->ConnectFunction(connect ? (FunctionShot*)function : NULL);
-	}
-}
-
 void ALFRED::ConnectCmdCnt(string source, string destination, bool connect)
 {
 	Command* command = GetCommand(source);
@@ -504,14 +407,6 @@ void ALFRED::ConnectCmdCnt(string source, string destination, bool connect)
 	}
 
     command->ConnectClient(connect ? client : NULL);
-}
-
-void ALFRED::ConnectFncCnt(string source, string destination, bool connect)
-{
-	Function* function = GetFunction(source);
-	Client* client = GetClient(destination);
-
-    function->ConnectClient(connect ? client : NULL);
 }
 
 void ALFRED::ConnectInfCnt(string source, string destination, bool connect)
@@ -538,14 +433,6 @@ void ALFRED::ConnectCmdRpcinf(string source, string destination, bool connect)
     }
 
     command->ConnectRpcInfo(connect ? rpcinfo : NULL);
-}
-
-void ALFRED::ConnectFncRpcinf(string source, string destination, bool connect)
-{
-    Function* function = GetFunction(source);
-    RpcInfo* rpcinfo = GetRpcInfo(destination);
-
-    function->ConnectRpcInfo(connect ? rpcinfo : NULL);
 }
 
 void ALFRED::ConnectInfRpcinf(string source, string destination, bool connect)
@@ -587,22 +474,6 @@ void ALFRED::ConnectRpcinfCnt(string source, string destination, bool connect)
     rpcinfo->ConnectClient(connect ? client : NULL);
 }
 
-void ALFRED::ConnectRpcinfFnc(string source, string destination, bool connect)
-{
-    RpcInfo* rpcinfo = GetRpcInfo(source);
-    Function* function = GetFunction(destination);
-
-    if (function->Type() != FNC_TYPE::SHOT)
-    {
-        Print::PrintError("Cannot connect rpcinfo to non-shot function!");
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        rpcinfo->ConnectFunction(connect ? (FunctionShot*)function : NULL);
-    }
-}
-
 void ALFRED::ConnectRpcSrv(string source, string destination, bool connect)
 {
     Rpc* rpc = GetRpc(source);
@@ -627,22 +498,6 @@ void ALFRED::ConnectRpcCnt(string source, string destination, bool connect)
     }
 
     rpc->ConnectClient(connect ? client : NULL);
-}
-
-void ALFRED::ConnectRpcFnc(string source, string destination, bool connect)
-{
-    Rpc* rpc = GetRpc(source);
-    Function* function = GetFunction(destination);
-
-    if (function->Type() != FNC_TYPE::SHOT)
-    {
-        Print::PrintError("Cannot connect rpc to non-shot function!");
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        rpc->ConnectFunction(connect ? (FunctionShot*)function : NULL);
-    }
 }
 
 Service* ALFRED::GetService(string name)
@@ -694,19 +549,6 @@ Client* ALFRED::GetClient(string name)
 	{
         Print::PrintError(string("No client ") + name + " exists!");
 		exit(EXIT_FAILURE);
-	}
-}
-
-Function* ALFRED::GetFunction(string name)
-{
-	if (!frontend)
-	{
-        Print::PrintError("No FrontEnd defined!");
-		exit(EXIT_FAILURE);
-	}
-	else
-	{
-		return frontend->GetFunction(name);
 	}
 }
 
@@ -763,8 +605,8 @@ string ALFRED::GetIP()
 	}
 	else
 	{
-		char ip[17] = "\0";
-		fgets(ip, 16, fpipe);
+        char ip[51] = "\0";
+        fgets(ip, 50, fpipe);
 		pclose(fpipe);
 
 		char *endOfLine = strchr(ip, '\n');
@@ -789,8 +631,8 @@ string ALFRED::GetHost()
 	}
 	else
 	{
-		char host[17] = "\0";
-		fgets(host, 16, fpipe);
+        char host[41] = "\0";
+        fgets(host, 40, fpipe);
 		pclose(fpipe);
 
 		char *endOfLine = strchr(host, '\n');

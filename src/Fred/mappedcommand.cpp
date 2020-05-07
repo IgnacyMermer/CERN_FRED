@@ -3,6 +3,7 @@
 #include "Parser/processmessage.h"
 #include "Fred/fredtopics.h"
 #include "Fred/queue.h"
+#include "Fred/Mapi/indefinitemapi.h"
 
 MappedCommand::MappedCommand(string name, Fred* fred, ChainTopic *topic, int32_t placeId): CommandString::CommandString(name, (ALFRED*)fred)
 {
@@ -37,7 +38,7 @@ const void* MappedCommand::Execution(void *value)
             {
                 string error = "Required ALF/CANALF not available!";
                 Print::PrintError(name, error);
-                topic->error->Update(error.c_str());
+                topic->error->Update(error);
                 Print::PrintError(topic->name, "Updating error service!");
                 delete processMessage;
                 return NULL;
@@ -49,27 +50,34 @@ const void* MappedCommand::Execution(void *value)
         {
             string error = "Invalid input received!";
             Print::PrintError(name, error);
-            topic->error->Update(error.c_str());
+            topic->error->Update(error);
             Print::PrintError(topic->name, "Updating error service!");
             delete processMessage;
         }
     }
     else
     {
-        ProcessMessage* processMessage = new ProcessMessage(topic->mapi, request, this->useCru);
-
-        Queue* queue = this->useCru ? this->topic->alfQueue.first : this->topic->alfQueue.second;
-        if (!queue)
+        if (!this->topic->mapi->customMessageProcess())
         {
-            string error = "Required ALF/CANALF not available!";
-            Print::PrintError(name, error);
-            topic->error->Update(error.c_str());
-            Print::PrintError(topic->name, "Updating error service!");
-            delete processMessage;
-            return NULL;
-        }
+            ProcessMessage* processMessage = new ProcessMessage(topic->mapi, request, this->useCru);
 
-        queue->newRequest(make_pair(processMessage, this->topic));
+            Queue* queue = this->useCru ? this->topic->alfQueue.first : this->topic->alfQueue.second;
+            if (!queue)
+            {
+                string error = "Required ALF/CANALF not available!";
+                Print::PrintError(name, error);
+                topic->error->Update(error);
+                Print::PrintError(topic->name, "Updating error service!");
+                delete processMessage;
+                return NULL;
+            }
+
+            queue->newRequest(make_pair(processMessage, this->topic));
+        }
+        else
+        {
+            dynamic_cast<IndefiniteMapi*>(this->topic->mapi)->requestReceived(request);
+        }
     }
 
     return NULL;

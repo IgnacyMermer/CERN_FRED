@@ -9,7 +9,7 @@
 CruRegisterCommand::CruRegisterCommand(Type type, Fred* fred): CommandString::CommandString(fred->Name() + (type == WRITE ? "/CRU_REGISTER/WRITE_REQ" : "/CRU_REGISTER/READ_REQ"), (ALFRED*)fred)
 {
     this->type = type;
-    fred->RegisterService(fred->Name() + (type == WRITE ? "/CRU_REGISTER/WRITE_ANS" : "/CRU_REGISTER/READ_ANS"), DIM_TYPE::STRING);
+    fred->RegisterService(fred->Name() + (type == WRITE ? "/CRU_REGISTER/WRITE_ANS" : "/CRU_REGISTER/READ_ANS"), ALFRED_TYPES::DIM_TYPE::STRING);
 
     this->isFinished = false;
     this->isProcessing = false;

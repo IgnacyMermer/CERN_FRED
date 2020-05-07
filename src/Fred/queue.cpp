@@ -70,7 +70,7 @@ void Queue::clearQueue(Queue *queue)
                 string errorMessage = e.what();
                 Print::PrintError(request.second->name, errorMessage);
 
-                request.second->error->Update(errorMessage.c_str());
+                request.second->error->Update(errorMessage);
                 Print::PrintError(request.second->name, "Updating error service!");
 
                 queue->isProcessing = false;
