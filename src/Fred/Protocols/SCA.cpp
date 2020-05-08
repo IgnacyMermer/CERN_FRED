@@ -13,7 +13,7 @@
 string SCA::generateMessage(Instructions::Instruction& instructions, vector<string>& outputPattern, ProcessMessage* processMessage)
 {
     string message;
-    bool parseInVar = instructions.inVar.size() > 0;
+    bool parseInVar = instructions.inVars.size() > 0;
 
     int32_t multiplicity = processMessage->getMultiplicity();
     size_t messageSize = instructions.message.size();
@@ -22,17 +22,17 @@ string SCA::generateMessage(Instructions::Instruction& instructions, vector<stri
     {
         for (size_t i = 0; i < messageSize; i++)
         {
-            string outVar;
+            string outVars;
             stringstream ss;
             string line = instructions.message[i];
 
-            if (parseInVar) processMessage->parseInputVariables(line, instructions.inVar, m); //parse invariables
+            if (parseInVar) processMessage->parseInputVariables(line, instructions.inVars, m); //parse IN_VARs
 
             size_t atPos = line.find('@');
 
             if (atPos != string::npos)
             {
-                outVar = line.substr(atPos + 1);
+                outVars = line.substr(atPos + 1);
                 line.erase(atPos); //remove @OUT_VAR
             }
 
@@ -50,7 +50,7 @@ string SCA::generateMessage(Instructions::Instruction& instructions, vector<stri
             }
             else throw runtime_error("SCA comma is missing!");
 
-            outputPattern.push_back(outVar); //push_back outvar name, empty string if not present
+            outputPattern.push_back(outVars); //push_back outvar name, empty string if not present
             message += line + "\n";
         }
     }
@@ -89,12 +89,15 @@ void SCA::checkIntegrity(const string& request, const string& response)
     }
 }
 
-vector<vector<unsigned long> > SCA::readbackValues(const string& message, vector<string> outputPattern, Instructions::Instruction& instructions)
+/*
+ * Return VARs values (as vector because of the multiplicity) ordered top to bottom as in the sequence 
+ */
+vector<vector<unsigned long> > SCA::readbackValues(const string& message, const vector<string>& outputPattern, Instructions::Instruction& instructions)
 {
-    vector<string>& outVars = instructions.outVar;
+    vector<string>& vars = instructions.vars;
     vector<string> splitted = Utility::splitString(message, "\n");
-    vector<unsigned long> values;
 
+    vector<unsigned long> values;
     for (size_t i = 0; i < splitted.size(); i++)
     {
         size_t pos = splitted[i].find(",");
@@ -104,33 +107,20 @@ vector<vector<unsigned long> > SCA::readbackValues(const string& message, vector
         }
     }
 
-    vector<vector<unsigned long> > results(outVars.size(), vector<unsigned long>());
-
-    for (size_t i = 0; i < values.size(); i++) //for each line of the response
+    vector<vector<unsigned long> > results(vars.size(), vector<unsigned long>());
+    for (size_t i = 0; i < values.size(); i++)
     {
-        if (outputPattern[i] != "") //if there is an outvar in the request line
+        if (outputPattern[i] != "") //if there is a VAR in the request line
         {
-            size_t id = distance(outVars.begin(), find(outVars.begin(), outVars.end(), outputPattern[i]));
-            results[id].push_back(values[i]); //push into results
+            size_t id = distance(vars.begin(), find(vars.begin(), vars.end(), outputPattern[i])); //Order values as VARs
+            results[id].push_back(values[i]);
         }
     }
 
     return results;
 }
 
-string SCA::valuesToString(vector<vector<unsigned long> > values, int32_t multiplicity)
+uint32_t SCA::getReturnWidth()
 {
-    stringstream result;
-
-    for (int32_t m = 0; m < multiplicity; m++)
-    {
-        for (size_t v = 0; v < values.size(); v++)
-        {
-            result << "0x" << setw(8) << setfill('0') << hex << values[v][m];
-            if (v < values.size() - 1) result << ",";
-        }
-        if (m < multiplicity - 1) result << "\n";
-    }
-
-    return result.str();
+    return SCA_RETURN_WIDTH;
 }

@@ -24,7 +24,7 @@ void SWT::SWTpad(string& line)
 
 string SWT::generateMessage(Instructions::Instruction& instructions, vector<string>& outputPattern, ProcessMessage* processMessage)
 {
-	bool parseInVar = instructions.inVar.size() > 0;
+	bool parseInVar = instructions.inVars.size() > 0;
 
 	int32_t multiplicity = processMessage->getMultiplicity();
 	size_t messageSize = instructions.message.size();
@@ -38,7 +38,7 @@ string SWT::generateMessage(Instructions::Instruction& instructions, vector<stri
 			string outVar;
 			string line = instructions.message[i]; //add raw user line
 
-			if (parseInVar) processMessage->parseInputVariables(line, instructions.inVar, m); //parse invariables
+			if (parseInVar) processMessage->parseInputVariables(line, instructions.inVars, m); //parse invariables
 
 			if (line.find("0x") != string::npos) line = line.substr(2); //remove eventual "0x"
 
@@ -109,47 +109,34 @@ void SWT::checkIntegrity(const string& request, const string& response)
 	}
 }
 
-vector<vector<unsigned long> > SWT::readbackValues(const string& message, vector<string> outputPattern, Instructions::Instruction& instructions)
+/*
+ * Return VARs values (as vector because of the multiplicity) ordered top to bottom as in the sequence 
+ */
+vector<vector<unsigned long> > SWT::readbackValues(const string& message, const vector<string>& outputPattern, Instructions::Instruction& instructions)
 {
-	vector<string>& outVars = instructions.outVar;
+	vector<string>& vars = instructions.vars;
 	vector<string> splitted = Utility::splitString(message, "\n");
-	vector<unsigned long> values;
 
+	vector<unsigned long> values;
 	for (size_t i = 0; i < splitted.size(); i++)
 	{
-		{
-			values.push_back(stoul(splitted[i].size() > 4 ? splitted[i].substr(splitted[i].size() - 4) : splitted[i], NULL, 16)); //last 4 or 0
-		}
+		values.push_back(stoul(splitted[i].size() > 4 ? splitted[i].substr(splitted[i].size() - 4) : splitted[i], NULL, 16)); //last 4 or 0
 	}
 
-	vector<vector<unsigned long> > results(outVars.size(), vector<unsigned long>());
-
-
-	for (size_t i = 0; i < values.size(); i++) //for each line of the response
+	vector<vector<unsigned long> > results(vars.size(), vector<unsigned long>());
+	for (size_t i = 0; i < values.size(); i++)
 	{
 		if (outputPattern[i] != "") //if there is an outvar in the request line
 		{
-			size_t id = distance(outVars.begin(), find(outVars.begin(), outVars.end(), outputPattern[i]));
-			results[id].push_back(values[i]); //push into results
+			size_t id = distance(vars.begin(), find(vars.begin(), vars.end(), outputPattern[i]));
+			results[id].push_back(values[i]);
 		}
 	}
 
 	return results;
 }
 
-string SWT::valuesToString(vector<vector<unsigned long> > values, int32_t multiplicity)
+uint32_t SWT::getReturnWidth()
 {
-	stringstream result;
-
-	for (int32_t m = 0; m < multiplicity; m++)
-	{
-		for (size_t v = 0; v < values.size(); v++)
-		{
-			result << "0x" << setw(4) << setfill('0') << hex << values[v][m];
-			if (v < values.size() - 1) result << ",";
-		}
-		if (m < multiplicity - 1) result << "\n";
-	}
-
-	return result.str();
+    return SWT_RETURN_WIDTH;
 }

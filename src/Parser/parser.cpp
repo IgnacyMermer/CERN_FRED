@@ -118,6 +118,7 @@ vector<Section> Parser::parseSections()
                 }
                 catch (exception& e)
                 {
+                    PrintError(e.what());
                     this->badFiles = true;
                 } 
             }
