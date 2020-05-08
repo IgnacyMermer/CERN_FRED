@@ -198,41 +198,37 @@ vector<vector<unsigned long> > ProcessMessage::readbackValues(const string& mess
 vector<double> ProcessMessage::calculateReadbackResult(vector<vector<unsigned long> >& result, Instructions::Instruction& instructions)
 {
     vector<double> resultValues;
-    vector<string>& outVars = instructions.outVar;
+    vector<string>& vars = instructions.vars;
 
     for (size_t m = 0; m < getMultiplicity(); m++)
     {
         vector<uint32_t> received;
-        for (size_t v = 0; v < outVars.size(); v++) received.push_back(result[v][m]);
+        for (size_t v = 0; v < vars.size(); v++) received.push_back(result[v][m]);
 
-        resultValues.push_back(Utility::calculateEquation(instructions.equation, outVars, received));
+        resultValues.push_back(Utility::calculateEquation(instructions.equation, vars, received)); // mapped one to one
     }
 
     return resultValues;
 }
 
-string ProcessMessage::valuesToString(vector<vector<unsigned long> > values, int32_t multiplicity, Instructions::Type type)
+/*
+ * Get the width of the return value depending on the protocol used
+ */
+uint32_t ProcessMessage::getReturnWidth(Instructions::Type type)
 {
-    string response;
+    uint32_t width;
  
-    try
+    switch (type)
     {
-        switch (type)
-        {
-            case Instructions::Type::SWT: response = SWT::valuesToString(values, multiplicity);
-                break;
-            case Instructions::Type::SCA: response = SCA::valuesToString(values, multiplicity);
-                break;
-            case Instructions::Type::IC: response = IC::valuesToString(values, multiplicity);
-                break;
-        }
-    }
-    catch (exception& e)
-    {
-        throw runtime_error(e.what());
+        case Instructions::Type::SWT: width = SWT::getReturnWidth();
+            break;
+        case Instructions::Type::SCA: width = SCA::getReturnWidth();
+            break;
+        case Instructions::Type::IC: width = IC::getReturnWidth();
+            break;
     }
 
-    return response;
+    return width;
 }
 
 /*
@@ -277,11 +273,9 @@ void ProcessMessage::evaluateMessage(string message, ChainTopic &chainTopic, boo
             }
             else if (message.find(SUCCESS) != string::npos) //SUCCESS
             {
-                vector<vector<unsigned long> > values;
                 try
                 {
                     Utility::checkMessageIntegrity(this->fullMessage, message.substr(SUCCESS.length() + 1), chainTopic.instruction->type); //check message integrity
-                    values = readbackValues(message.substr(SUCCESS.length() + 1), *chainTopic.instruction); //extract eventual outvars
                 }
                 catch (exception& e)
                 {
@@ -293,26 +287,53 @@ void ProcessMessage::evaluateMessage(string message, ChainTopic &chainTopic, boo
                     updateResponse(chainTopic, response, true);
                     return;
                 }
-                if (values.empty())
+
+                if (chainTopic.instruction->outVars.empty()) //No OUT_VARs
                 {
                     response = "OK"; //FRED ACK response
 
                     updateResponse(chainTopic, response, false);
                     return;
                 }
+                
+                //OUT_VARs to be published
+                vector<vector<unsigned long> > values;
+                values = readbackValues(message.substr(SUCCESS.length() + 1), *chainTopic.instruction); //extract VARs
 
-                if (chainTopic.instruction->equation != "")
+                vector<double> equationResults;
+                if (chainTopic.instruction->equation != "") //EQUATION
                 {
-                    vector<double> realValues = calculateReadbackResult(values, *chainTopic.instruction);
-                    response = Utility::readbackToString(realValues);
-                }
-                else
-                {
-                    response = valuesToString(values, getMultiplicity(), chainTopic.instruction->type);
+                    equationResults = calculateReadbackResult(values, *chainTopic.instruction);
                 }
 
+                vector<string>& outVars = chainTopic.instruction->outVars;
+                vector<string>& vars = chainTopic.instruction->vars;
+
+                //Order values and equation results as expressed by the OUT_VARs
+                stringstream ss;
+
+                for (int32_t m = 0; m < getMultiplicity(); m++)
+                {
+                    for (size_t i = 0; i < outVars.size(); i++)
+                    {
+                        if (outVars[i] == "EQUATION") //EQUATION keyword for returining the result of the equation
+                        {
+                            ss << equationResults[m];
+                        }
+                        else
+                        {
+                            size_t id = distance(vars.begin(), find(vars.begin(), vars.end(), outVars[i]));
+                            ss << "0x" << setw(getReturnWidth(chainTopic.instruction->type)) << setfill('0') << hex << values[id][m];
+                        }
+                        if (i < outVars.size() - 1) ss << ",";
+                    }
+                    if (m < getMultiplicity() - 1) ss << "\n";
+                }
+
+                response = ss.str();               
                 updateResponse(chainTopic, response, false);
                 return;
+                
             }
             else if (!(message.find(SUCCESS) != string::npos)) //not a SUCCESS
             {

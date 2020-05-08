@@ -28,16 +28,15 @@ void IC::checkIntegrity(const string& request, const string& response)
     //to be defined
 }
 
-vector<vector<unsigned long> > IC::readbackValues(const string& message, vector<string> outputPattern, Instructions::Instruction& instructions)
+vector<vector<unsigned long> > IC::readbackValues(const string& message, const vector<string>& outputPattern, Instructions::Instruction& instructions)
 {
     vector<vector<unsigned long> > results;
     //to be defined
     return results;
 }
 
-string IC::valuesToString(vector<vector<unsigned long> > values, int32_t multiplicity)
+uint32_t IC::getReturnWidth()
 {
-    stringstream result;
     //to be defined
-    return result.str();
+    return 4;
 }

@@ -3,7 +3,6 @@
 echo "Parser test Bash script started"
 
 cp -r ./examples/config/ .
-cp -r ./examples/IC/* .
 cp -r ./examples/SCA/* .
 cp -r ./examples/SWT/* .
 sed -i 's/dimdnsexample.cern.ch/localhost/g' ./config/fred.conf

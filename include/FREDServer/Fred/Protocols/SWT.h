@@ -10,14 +10,15 @@ using namespace std;
 const int SWT_LOW_WIDTH = 32 / 4; //SWT low hexadecimal width
 const int SWT_MIDDLE_WIDTH = 64 / 4; //SWT middle hexadecimal width
 const int SWT_HIGH_WIDTH = 76 / 4; //SWT low hexadecimal width
+const int SWT_RETURN_WIDTH = 4; //Width of the SWT OUT_VARs
 
 class SWT
 {
 public:
     static string generateMessage(Instructions::Instruction& instructions, vector<string>& outputPattern, ProcessMessage* processMessage);
     static void checkIntegrity(const string& request, const string& response);
-    static vector<vector<unsigned long> > readbackValues(const string& message, vector<string> outputPattern, Instructions::Instruction& instructions);
-    static string valuesToString(vector<vector<unsigned long> > values, int32_t multiplicity);
+    static vector<vector<unsigned long> > readbackValues(const string& message, const vector<string>& outputPattern, Instructions::Instruction& instructions);
+    static uint32_t getReturnWidth();
     static void SWTpad(string& line);
 };
 
