@@ -762,8 +762,8 @@ string ALFRED::GetIP()
 	}
 	else
 	{
-		char ip[41] = "\0";
-		fgets(ip, 40, fpipe);
+		char ip[17] = "\0";
+		fgets(ip, 16, fpipe);
 		pclose(fpipe);
 
 		char *endOfLine = strchr(ip, '\n');
@@ -788,8 +788,8 @@ string ALFRED::GetHost()
 	}
 	else
 	{
-		char host[17] = "\0";
-		fgets(host, 16, fpipe);
+		char host[41] = "\0";
+		fgets(host, 40, fpipe);
 		pclose(fpipe);
 
 		char *endOfLine = strchr(host, '\n');
