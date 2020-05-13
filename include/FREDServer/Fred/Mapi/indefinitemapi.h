@@ -7,6 +7,7 @@
 #include <condition_variable>
 #include <atomic>
 #include <map>
+#include <utility>
 
 using namespace std;
 
@@ -18,7 +19,9 @@ private:
     atomic<bool> isFinished;
 
     condition_variable requestRecv, sequenceRecv;
-    string request, response;
+    string response;
+    pair<string, bool> request;
+    mutex requestAccess;
 
     static map<thread::id, IndefiniteMapi*> mappedThreads;
 
@@ -34,7 +37,11 @@ public:
     string processOutputMessage(string output) final;
 
     virtual void processExecution() = 0;
+
     string waitForRequest(bool& running);
+    bool isRequestAvailable(bool& running);
+    string getRequest();
+
     string executeAlfSequence(string sequence);
 
     bool customMessageProcess();

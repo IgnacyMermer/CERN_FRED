@@ -12,6 +12,7 @@ IndefiniteMapi::IndefiniteMapi()
 {
     this->isFinished = false;
     this->executionThread = NULL;
+    this->request = make_pair(string(""), false);
 }
 
 IndefiniteMapi::~IndefiniteMapi()
@@ -83,9 +84,33 @@ string IndefiniteMapi::waitForRequest(bool &running)
     }
 
     running = true;
-    string request = this->request;
-    this->request = "";
-    return request;
+
+    lock_guard<mutex> lock(this->requestAccess);
+    pair<string, bool> request = this->request;
+    this->request = make_pair(string(""), false);
+    return request.second ? request.first : "";
+}
+
+bool IndefiniteMapi::isRequestAvailable(bool& running)
+{
+    if (this->isFinished)
+    {
+        running = false;
+        return false;
+    }
+
+    running = true;
+
+    lock_guard<mutex> lock(this->requestAccess);
+    return this->request.second;
+}
+
+string IndefiniteMapi::getRequest()
+{
+    lock_guard<mutex> lock(this->requestAccess);
+    pair<string, bool> request = this->request;
+    this->request = make_pair(string(""), false);
+    return request.second ? request.first : "";
 }
 
 string IndefiniteMapi::executeAlfSequence(string sequence)
@@ -126,7 +151,8 @@ bool IndefiniteMapi::customMessageProcess()
 
 void IndefiniteMapi::requestReceived(string request)
 {
-    this->request = request;
+    lock_guard<mutex> lock(this->requestAccess);
+    this->request = make_pair(request, true);
     this->requestRecv.notify_one();
 }
 
