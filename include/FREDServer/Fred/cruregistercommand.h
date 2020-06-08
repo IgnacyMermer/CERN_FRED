@@ -4,6 +4,7 @@
 #include <string>
 #include "Alfred/command.h"
 #include <thread>
+#include <condition_variable>
 #include <mutex>
 #include <atomic>
 #include <list>
@@ -33,10 +34,11 @@ private:
     void executeRead(vector<uint32_t>& message);
     string builAlfTopic(Type type, uint32_t alf, uint32_t serial);
 
-    mutex lock;
+    condition_variable conditionVar;
     thread* clearThread;
     atomic<bool> isFinished, isProcessing;
     list<pair<string, RpcInfoString*> > stack;
+    mutex stackMutex;
 
     static void clearRequests(CruRegisterCommand* self);
     void newRequest(pair<string, RpcInfoString*> request);

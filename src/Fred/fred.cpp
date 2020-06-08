@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <fstream>
 #include <exception>
+#include <getopt.h>
 #include "Alfred/print.h"
 #include "Parser/parser.h"
 #include "Fred/Config/mapping.h"
@@ -9,20 +10,21 @@
 #include "Fred/Mapi/mapi.h"
 #include "Fred/Mapi/iterativemapi.h"
 #include "Fred/Mapi/mapigroup.h"
-#include <boost/program_options.hpp>
-#include "Fred/dimutilities.h"
+#include "Alfred/dimutilities.h"
 #include "Fred/alfrpcinfo.h"
+
+bool Fred::terminate = false;
 
 /*
  * Fred constructor
  */
-Fred::Fred(bool parseOnly, string fredName, string dnsName, string mainDirectory): ALFRED::ALFRED(fredName, dnsName), alfClients(this), fredTopics(this)
+Fred::Fred(bool parseOnly, string fredName, string dnsName, string mainDirectory): ALFRED::ALFRED(fredName, dnsName, parseOnly), alfClients(this), fredTopics(this)
 {
-    signal(SIGINT, &terminate);
+    signal(SIGINT, &termFred);
 
     this->fredDns = dnsName;
 
-    PrintInfo("Parsing started.");
+    Print::PrintInfo("Parsing started.");
     try //parsing
     {
         Parser parser(mainDirectory);
@@ -30,27 +32,29 @@ Fred::Fred(bool parseOnly, string fredName, string dnsName, string mainDirectory
 
         if(parser.badFiles)
         {
-            PrintError("Parser discovered errors! (See output above)");
+            Print::PrintError("Parser discovered errors! (See output above)");
             exit(EXIT_FAILURE);
         }
     }
     catch (exception& e)
     {
-        PrintError("Error occured during parsing configuration files!");
+        Print::PrintError("Error occured during parsing configuration files!");
         exit(EXIT_FAILURE);
     }
 
     if (parseOnly)
     {
-        PrintInfo("Parsing completed! No problems discovered.");
+        Print::PrintInfo("Parsing completed! No problems discovered.");
         exit(EXIT_SUCCESS);
     }
 
-    PrintInfo("Parsing Completed. Starting FRED.");
+    Print::PrintInfo("Parsing Completed. Starting FRED.");
+
     generateAlfs();
     generateTopics();
     checkAlfs();
-    PrintInfo("FRED running.");
+
+    Print::PrintInfo("FRED running.");
 }
 
 /*
@@ -79,18 +83,18 @@ pair<string, string> Fred::readConfigFile()
     }
     catch (exception& e)
     {
-        PrintError("Cannot load FRED config file!");
+        Print::PrintError("Cannot load FRED config file!");
         exit(-1);
     }
 
-    PrintError("Invalid config file!");
+    Print::PrintError("Invalid config file!");
     exit(-1);
 }
 
-void Fred::terminate(int)
+void Fred::termFred(int)
 {
-    PrintWarning("Closing FRED!");
-    exit(EXIT_SUCCESS);
+    Print::PrintWarning("Closing FRED!");
+    Fred::terminate = true;
 }
 
 void Fred::generateAlfs()
@@ -133,14 +137,23 @@ void Fred::checkAlfs()
     map<string, ChainTopic> topicsMapi = fredTopics.getTopicsMap();
     for (auto topic = topicsMapi.begin(); topic != topicsMapi.end(); topic++)
     {
-        pair <string, string> alfred;
+        if (topic->second.alfLink.first)
+        {
+            services.push_back(topic->second.alfLink.first->getName());
+        }
+
+        if (topic->second.alfLink.second)
+        {
+            services.push_back(topic->second.alfLink.second->getName());
+        }
+        /*pair <string, string> alfred;
         
         alfred.first = topic->second.name;
         alfred.second = topic->second.alfLink->getName();
 
         //cout << alfred.first << " -> " << alfred.second << endl; // print "topic -> alfLink"
         
-        services.push_back(alfred.second);
+        services.push_back(alfred.second);*/
     }
 
     DimUtilities::checkServices(services);
@@ -163,8 +176,7 @@ string Fred::getFredDns()
 
 void Fred::registerMapiObject(string topic, Mapi* mapi)
 {
-    mapi->getFred(this);
-    mapi->getName(topic);
+    mapi->registerMapi(this, topic);
     fredTopics.registerMapiObject(topic, mapi);
 }
 
@@ -173,68 +185,92 @@ void Fred::registerMapiObject(string topic, Mapi* mapi)
  */
 bool Fred::commandLineArguments(int argc, char** argv)
 {
-    extern bool verbose;
-    extern bool logToFile;
-    extern string logFilePath;
-
-    namespace po = boost::program_options;
-    po::options_description description("FRED options");
-    description.add_options()
-    ("help, h", "Print help message")
-    ("verbose, v", "Verbose output")
-    ("parser, p", "Parse config files then exit")
-    ("log, l", po::value<string>(),"Log to file <file>");
-
-    po::variables_map vm;
-
-    try
+    struct option long_options[] =
     {
-        po::store(po::parse_command_line(argc, argv, description), vm);
-        if (vm.count("help"))
-        {
-            cout << description << endl; //print help menu
-            exit(EXIT_SUCCESS);
-        }
-        if (vm.count("log"))
-        {
-            logFilePath = vm["log"].as<string>();
-            ofstream logFile;
+        {"verbose", no_argument, 0, 'v'},
+        {"log", required_argument, 0, 'l'},
+        {"help", no_argument, 0, 'h'},
+        {"parse", no_argument, 0, 'p'}
+    };
 
-            logFile.open(logFilePath, ios_base::app);
-            if (logFile)
-            {
-                PrintInfo("FRED launched, logging to " + logFilePath); //inform user
-                logToFile = true;
-                PrintInfo("FRED launched, logging to " + logFilePath); //inform via log file
-            }
-            else
-            {
-                PrintError("FRED launched, log file " + logFilePath + " is not writable, falling back to standard output!");
-            }
+    bool parseOnly = false;
+    string logFilePath;
+
+    int c;
+    while ((c = getopt_long(argc, argv, "vl:hp" ,long_options, 0)) != -1)
+    {
+        switch (c)
+        {
+            case 'v':
+                Print::setVerbose(true);
+                Print::PrintWarning("FRED is verbose!");
+                break;
+            case 'l':
+                if (!optarg)
+                {
+                    Print::PrintError("Argument \"log\" requires parameter!");
+                    exit(-1);
+                }
+                logFilePath = optarg;
+                break;
+            case 'h':
+                printHelp();
+                exit(0);
+                break;
+            case 'p':
+                parseOnly = true;
+                Print::PrintWarning("Parse only mode!");
+                break;
+            case '?':
+            default:
+                Print::PrintError("Invalid argument detected!");
+                printHelp();
+                exit(-1);
+        }
+    }
+
+    if (!logFilePath.empty())
+    {
+        ofstream logFile;
+        logFile.open(logFilePath, ios_base::app);
+
+        if (logFile)
+        {
+            Print::PrintInfo("FRED launched, logging to " + logFilePath); //inform user
+            Print::setLogFile(logFilePath);
+            Print::PrintInfo("FRED launched, logging to " + logFilePath); //inform via log file
+
             logFile.close();
         }
         else
         {
-            PrintInfo("FRED launched!");
+            Print::PrintError("FRED launched, log file " + logFilePath + " is not writable, falling back to standard output!");
         }
-        if (vm.count("verbose"))
-        {
-            verbose = true;
-            PrintWarning("FRED is verbose!");
-        }
-        if (vm.count("parser"))
-        {
-            PrintWarning("Parse only mode!");
-            return true;
-        }
-        po::notify(vm);
     }
-    catch (po::error& e)
+    else
     {
-        PrintError(e.what());
-        cerr << description << endl; //print help menu
-        exit(EXIT_FAILURE);
+        Print::PrintInfo("FRED launched!");
     }
 
-    return false;
+    return parseOnly;
+}
+
+void Fred::printHelp()
+{
+    cout << "Usage: FREDServer [OPTIONS]\n\n"
+        << "Optional arguments:\n"
+        << "\t-v, --verbose\t\t\t\tVerbose log\n"
+        << "\t-l, --log\t\t<file>\t\tLog output to file <file>\n"
+        << "\t-p, --parse\t\t\t\tParse only mode\n"
+        << "\t-h, --help\t\t\t\tShow this help\n";
+}
+
+void Fred::Start()
+{
+    StartOnce();
+
+    while (!Fred::terminate)
+    {
+        usleep(100000);
+    }
 }

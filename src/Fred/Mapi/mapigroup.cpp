@@ -6,7 +6,6 @@
 #include "Fred/fred.h"
 #include "Alfred/print.h"
 #include "Parser/processmessage.h"
-#include "Fred/Mapi/mapi.h"
 
 /*
  * Send a new request to a group of MAPI topic 
@@ -22,13 +21,24 @@ void Mapigroup::newMapiGroupRequest(vector<pair<string, string> > requests)
         auto it = map.find(requests[i].first);
         if (it == map.end())
         {
-            PrintError(requests[i].first + " requested in " + this->name + " is not a registered topic!");
+            Print::PrintError(requests[i].first + " requested in " + this->name + " is not a registered topic!");
         }
         else
         {
             ChainTopic& mapi = map[requests[i].first];
-            ProcessMessage* processMessage = new ProcessMessage(mapi.mapi, requests[i].second);
-            mapi.alfQueue->newRequest(make_pair(processMessage, &mapi));
+            bool useCru = dynamic_cast<MappedCommand*>(mapi.command)->getUseCru();
+            ProcessMessage* processMessage = new ProcessMessage(mapi.mapi, requests[i].second, useCru);
+            Queue* queue = useCru ? mapi.alfQueue.first : mapi.alfQueue.second;
+            if (!queue)
+            {
+                string error = "Required ALF/CANALF not available!";
+                Print::PrintError(name, error);
+                thisMapi->error->Update(error);
+                delete processMessage;
+                return;
+            }
+
+            queue->newRequest(make_pair(processMessage, &mapi));
         }
     }
 }
@@ -47,7 +57,7 @@ void Mapigroup::newTopicGroupRequest(vector<pair<string, string> > requests)
         auto it = map.find(requests[i].first);
         if (it == map.end())
         {
-            PrintError(requests[i].first + " requested in " + this->name + " is not a registered topic!");
+            Print::PrintError(requests[i].first + " requested in " + this->name + " is not a registered topic!");
         }
         else
         {
@@ -55,28 +65,19 @@ void Mapigroup::newTopicGroupRequest(vector<pair<string, string> > requests)
 
             int32_t placeId = map[requests[i].first].placeId;
 
-            ProcessMessage* processMessage = new ProcessMessage(requests[i].second, placeId);
-            topic.alfQueue->newRequest(make_pair(processMessage, &topic));
+            bool useCru = dynamic_cast<MappedCommand*>(topic.command)->getUseCru();
+            ProcessMessage* processMessage = new ProcessMessage(requests[i].second, placeId, useCru);
+            Queue* queue = useCru ? topic.alfQueue.first : topic.alfQueue.second;
+            if (!queue)
+            {
+                string error = "Required ALF/CANALF not available!";
+                Print::PrintError(name, error);
+                thisMapi->error->Update(error);
+                delete processMessage;
+                return;
+            }
+
+            queue->newRequest(make_pair(processMessage, &topic));
         }
     }
-}
-
-/*
- * Publish MAPI _ANS service 
- */
-void Mapigroup::publishAnswer(string message)
-{
-    thisMapi->service->Update(message.c_str());
-
-    PrintVerbose(name, "Updating MAPI service");
-}
-
-/*
- * Publish MAPI _ERR service 
- */
-void Mapigroup::publishError(string error)
-{
-    thisMapi->error->Update(error.c_str());
-
-    PrintError(name, "Updating MAPI error service!");
 }

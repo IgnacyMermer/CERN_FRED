@@ -9,7 +9,7 @@
 CruRegisterCommand::CruRegisterCommand(Type type, Fred* fred): CommandString::CommandString(fred->Name() + (type == WRITE ? "/CRU_REGISTER/WRITE_REQ" : "/CRU_REGISTER/READ_REQ"), (ALFRED*)fred)
 {
     this->type = type;
-    fred->RegisterService(fred->Name() + (type == WRITE ? "/CRU_REGISTER/WRITE_ANS" : "/CRU_REGISTER/READ_ANS"), DIM_TYPE::STRING);
+    fred->RegisterService(fred->Name() + (type == WRITE ? "/CRU_REGISTER/WRITE_ANS" : "/CRU_REGISTER/READ_ANS"), ALFRED_TYPES::DIM_TYPE::STRING);
 
     this->isFinished = false;
     this->isProcessing = false;
@@ -19,7 +19,7 @@ CruRegisterCommand::CruRegisterCommand(Type type, Fred* fred): CommandString::Co
 CruRegisterCommand::~CruRegisterCommand()
 {
     this->isFinished = true;
-    lock.unlock();
+    conditionVar.notify_one();
     clearThread->join();
     delete clearThread;
 }
@@ -28,20 +28,25 @@ const void* CruRegisterCommand::Execution(void *value)
 {
     if (!value)
     {
-        PrintError("Invalid request, no value received!");
+        Print::PrintError("Invalid request, no value received!");
     }
 
     string request(static_cast<char*>(value));
 
-    PrintVerbose("Received command:\n" + request);
+    Print::PrintVerbose("Received command:\n" + request);
 
-    vector<uint32_t> splitted = Utility::splitString2Num(request, ",");
+    vector<uint32_t> splitted;
+    vector<double> splittedDouble = Utility::splitString2Num(request, ",");
+    for (size_t i = 0; i < splittedDouble.size(); i++)
+    {
+        splitted.push_back(uint32_t(splittedDouble[i]));
+    }
 
     if (this->type == WRITE)
     {
         if (splitted.size() < 4)
         {
-            PrintError("Invalid number of arguments received for CRU_REGISTER WRITE");
+            Print::PrintError("Invalid number of arguments received for CRU_REGISTER WRITE");
             return NULL;
         }
 
@@ -51,7 +56,7 @@ const void* CruRegisterCommand::Execution(void *value)
     {
         if (splitted.size() < 3)
         {
-            PrintError("Invalid number of arguments received for CRU_REGISTER READ");
+            Print::PrintError("Invalid number of arguments received for CRU_REGISTER READ");
             return NULL;
         }
 
@@ -72,7 +77,7 @@ void CruRegisterCommand::executeWrite(vector<uint32_t>& message)
     RpcInfoString* rpcInfo = (RpcInfoString*)Parent()->GetRpcInfo(alfTopic);
     if (!rpcInfo)
     {
-        PrintError("Cannot find RPC Info " + alfTopic + "!");
+        Print::PrintError("Cannot find RPC Info " + alfTopic + "!");
         return;
     }
 
@@ -90,7 +95,7 @@ void CruRegisterCommand::executeRead(vector<uint32_t>& message)
     RpcInfoString* rpcInfo = (RpcInfoString*)Parent()->GetRpcInfo(alfTopic);
     if (!rpcInfo)
     {
-        PrintError("Cannot find RPC Info " + alfTopic + "!");
+        Print::PrintError("Cannot find RPC Info " + alfTopic + "!");
         return;
     }
 
@@ -104,6 +109,9 @@ string CruRegisterCommand::builAlfTopic(Type type, uint32_t alf, uint32_t serial
 
 void CruRegisterCommand::clearRequests(CruRegisterCommand *self)
 {
+    mutex lock;
+    unique_lock<mutex> uniqueLock(lock);
+
     while (1)
     {
         if (self->isFinished)
@@ -111,14 +119,18 @@ void CruRegisterCommand::clearRequests(CruRegisterCommand *self)
             return;
         }
 
-        self->lock.lock();
+        self->conditionVar.wait(uniqueLock);
 
         while (!self->stack.empty())
         {
             self->isProcessing = true;
 
-            pair<string, RpcInfoString*> request = self->stack.front();
-            self->stack.pop_front();
+            pair<string, RpcInfoString*> request;
+            {
+                lock_guard<mutex> lockGuard(self->stackMutex);
+                request = self->stack.front();
+                self->stack.pop_front();
+            }
             //do processing
 
             char* buffer = strdup(request.first.c_str());
@@ -132,10 +144,13 @@ void CruRegisterCommand::clearRequests(CruRegisterCommand *self)
 
 void CruRegisterCommand::newRequest(pair<string, RpcInfoString*> request)
 {
-    stack.push_back(request);
+    {
+        lock_guard<mutex> lockGuard(stackMutex);
+        stack.push_back(request);
+    }
 
     if (!isProcessing)
     {
-        lock.unlock();
+        conditionVar.notify_one();
     }
 }

@@ -1,6 +1,5 @@
 #include "Alfred/rpcinfo.h"
 #include "Alfred/service.h"
-#include "Alfred/frontend.h"
 #include "Alfred/client.h"
 #include "Alfred/print.h"
 #include "Alfred/alfred.h"
@@ -36,16 +35,15 @@ void RpcInfo::RemoveElement(const string& name, const string &dns)
 RpcInfo::RpcInfo(string name, string dns, ALFRED* alfred)
 {
     serviceCallback = NULL;
-    functionCallback = NULL;
     clientCallback = NULL;
 
-    type = DIM_TYPE::NONE;
+    type = ALFRED_TYPES::DIM_TYPE::NONE;
     this->name = name;
     this->dns = dns;
 
     if (!alfred)
     {
-        PrintError(string("ALFRED for RpcInfo ") + name + " not defined!");
+        Print::PrintError(string("ALFRED for RpcInfo ") + name + " not defined!");
         exit(EXIT_FAILURE);
     }
 
@@ -53,7 +51,7 @@ RpcInfo::RpcInfo(string name, string dns, ALFRED* alfred)
 
     if (AlreadyRegistered(name, dns))
     {
-        PrintError(string("RpcInfo ") + name + " already registered!");
+        Print::PrintError(string("RpcInfo ") + name + " already registered!");
         exit(EXIT_FAILURE);
     }
     else
@@ -78,11 +76,6 @@ void RpcInfo::ConnectService(Service* serviceCallback)
     this->serviceCallback = serviceCallback;
 }
 
-void RpcInfo::ConnectFunction(FunctionShot* functionCallback)
-{
-    this->functionCallback = functionCallback;
-}
-
 void RpcInfo::ConnectClient(Client* clientCallback)
 {
     this->clientCallback = clientCallback;
@@ -93,35 +86,20 @@ void RpcInfo::CallService(string name, void* value)
     Parent()->GetService(name)->Update(value);
 }
 
-void RpcInfo::CallFunction(string name, void* value)
-{
-    Function* function = Parent()->GetFunction(name);
-
-    if (function->Type() != FNC_TYPE::SHOT)
-    {
-        PrintError("Cannot call non-shot function!");
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        ((FunctionShot*)function)->Shot(value);
-    }
-}
-
 void* RpcInfo::Send(void *value)
 {
     switch (type)
     {
-        case DIM_TYPE::INT:
+        case ALFRED_TYPES::DIM_TYPE::INT:
             return ((RpcInfoInt*)this)->Send(*(int*)value);
-        case DIM_TYPE::FLOAT:
+        case ALFRED_TYPES::DIM_TYPE::FLOAT:
             return ((RpcInfoFloat*)this)->Send(*(float*)value);
-        case DIM_TYPE::STRING:
+        case ALFRED_TYPES::DIM_TYPE::STRING:
             return ((RpcInfoString*)this)->Send((char*) value);
-        case DIM_TYPE::DATA:
+        case ALFRED_TYPES::DIM_TYPE::DATA:
             return ((RpcInfoData*)this)->Send(value);
         default:
-            PrintError("Invalid type of client!");
+            Print::PrintError("Invalid type of client!");
             exit(EXIT_FAILURE);
     }
 }
@@ -131,7 +109,7 @@ void RpcInfo::CallClient(string name, void* value)
     Parent()->GetClient(name)->Send(value);
 }
 
-DIM_TYPE RpcInfo::Type()
+ALFRED_TYPES::DIM_TYPE RpcInfo::Type()
 {
     return type;
 }
@@ -155,10 +133,10 @@ ALFRED* RpcInfo::Parent()
 
 RpcInfoInt::RpcInfoInt(string name, string dns, ALFRED* alfred): RpcInfo::RpcInfo(name, dns, alfred)
 {
-    type = DIM_TYPE::INT;
+    type = ALFRED_TYPES::DIM_TYPE::INT;
     rpcInfo = new DimRpcInfo(name.c_str(), -1);
 
-    PrintVerbose(string("RpcInfo ") + name + " registered!");
+    Print::PrintVerbose(string("RpcInfo ") + name + " registered!");
 }
 
 RpcInfoInt::~RpcInfoInt()
@@ -179,11 +157,6 @@ void* RpcInfoInt::Send(int value)
         serviceCallback->Update(result);
     }
 
-    if (functionCallback)
-    {
-        functionCallback->Shot(result);
-    }
-
     if (clientCallback)
     {
         clientCallback->Send(result);
@@ -191,7 +164,7 @@ void* RpcInfoInt::Send(int value)
 
     if (!result)
     {
-        //PrintWarning(string("RpcInfo ") + Name() + " not valid data!");
+        //Print::PrintWarning(string("RpcInfo ") + Name() + " not valid data!");
         return NULL;
     }
 
@@ -202,10 +175,10 @@ void* RpcInfoInt::Send(int value)
 
 RpcInfoFloat::RpcInfoFloat(string name, string dns, ALFRED* alfred): RpcInfo::RpcInfo(name, dns, alfred)
 {
-    type = DIM_TYPE::FLOAT;
+    type = ALFRED_TYPES::DIM_TYPE::FLOAT;
     rpcInfo = new DimRpcInfo(name.c_str(), -1.0);
 
-    PrintVerbose(string("RpcInfo ") + name + " registered!");
+    Print::PrintVerbose(string("RpcInfo ") + name + " registered!");
 }
 
 RpcInfoFloat::~RpcInfoFloat()
@@ -226,11 +199,6 @@ void* RpcInfoFloat::Send(float value)
         serviceCallback->Update(result);
     }
 
-    if (functionCallback)
-    {
-        functionCallback->Shot(result);
-    }
-
     if (clientCallback)
     {
         clientCallback->Send(result);
@@ -238,7 +206,7 @@ void* RpcInfoFloat::Send(float value)
 
     if (!result)
     {
-        //PrintWarning(string("RpcInfo ") + Name() + " not valid data!");
+        //Print::PrintWarning(string("RpcInfo ") + Name() + " not valid data!");
         return NULL;
     }
 
@@ -249,13 +217,13 @@ void* RpcInfoFloat::Send(float value)
 
 RpcInfoString::RpcInfoString(string name, string dns, ALFRED* alfred): RpcInfo::RpcInfo(name, dns, alfred)
 {
-    type = DIM_TYPE::STRING;
+    type = ALFRED_TYPES::DIM_TYPE::STRING;
 
     strcpy(noLink, "NO RPC LINK!"); //response from the callback when link is dow
 
     rpcInfo = new DimRpcInfo(name.c_str(), noLink);
 
-    PrintVerbose(string("RpcInfo ") + name + " registered!");
+    Print::PrintVerbose(string("RpcInfo ") + name + " registered!");
 }
 
 RpcInfoString::~RpcInfoString()
@@ -276,11 +244,6 @@ void* RpcInfoString::Send(char *value)
         serviceCallback->Update(result);
     }
 
-    if (functionCallback)
-    {
-        functionCallback->Shot(result);
-    }
-
     if (clientCallback)
     {
         clientCallback->Send(result);
@@ -288,7 +251,7 @@ void* RpcInfoString::Send(char *value)
 
     if (!result)
     {
-        //PrintWarning(string("RpcInfo ") + Name() + " not valid data!");
+        //Print::PrintWarning(string("RpcInfo ") + Name() + " not valid data!");
         return NULL;
     }
 
@@ -299,11 +262,11 @@ void* RpcInfoString::Send(char *value)
 
 RpcInfoData::RpcInfoData(string name, string dns, ALFRED* alfred, size_t size): RpcInfo::RpcInfo(name, dns, alfred)
 {
-    type = DIM_TYPE::DATA;
+    type = ALFRED_TYPES::DIM_TYPE::DATA;
     this->size = size;
     rpcInfo = new DimRpcInfo(name.c_str(), (void*)NULL, (int)0);
 
-    PrintVerbose(string("RpcInfo ") + name + " registered!");
+    Print::PrintVerbose(string("RpcInfo ") + name + " registered!");
 }
 
 RpcInfoData::~RpcInfoData()
@@ -315,7 +278,7 @@ void* RpcInfoData::Send(void* value)
 {
     if (!value)
     {
-        //PrintWarning(string("RpcInfo ") + Name() + " not valid data!");
+        //Print::PrintWarning(string("RpcInfo ") + Name() + " not valid data!");
         return NULL;
     }
 
@@ -325,7 +288,7 @@ void* RpcInfoData::Send(void* value)
 
     if (!recValue)
     {
-        //PrintWarning(string("RpcInfo ") + Name() + " not valid data!");
+        //Print::PrintWarning(string("RpcInfo ") + Name() + " not valid data!");
         return NULL;
     }
 
@@ -336,11 +299,6 @@ void* RpcInfoData::Send(void* value)
         serviceCallback->Update(result);
     }
 
-    if (functionCallback)
-    {
-        functionCallback->Shot(result);
-    }
-
     if (clientCallback)
     {
         clientCallback->Send(result);
@@ -348,7 +306,7 @@ void* RpcInfoData::Send(void* value)
 
     if (!result)
     {
-        //PrintWarning(string("Rpc ") + Name() + " not valid data!");
+        //Print::PrintWarning(string("Rpc ") + Name() + " not valid data!");
         return NULL;
     }
 

@@ -17,9 +17,8 @@ class Service
 protected:
 	DimService *service;
 	size_t size;
-	void *value;
 
-	DIM_TYPE type;
+    ALFRED_TYPES::DIM_TYPE type;
 	string name;
 	ALFRED* alfred;
 
@@ -32,13 +31,11 @@ protected:
 public:
 	virtual ~Service();
 	
-	void* GetValuePnt();
 	size_t GetValueSize();
 	
-    void Update();
 	void Update(const void* value);
 
-	DIM_TYPE Type();
+    ALFRED_TYPES::DIM_TYPE Type();
 	string Name();
 	ALFRED* Parent();
 };
@@ -47,36 +44,56 @@ public:
 
 class ServiceInt: public Service
 {
+private:
+    int value;
+
 public:
 	ServiceInt(string name, ALFRED* alfred);
 	~ServiceInt();
+
+    void Update(int value);
 };
 
 /*----------------------------------------------------------------------------------------------*/
 
 class ServiceFloat: public Service
 {
+private:
+    float value;
+
 public:
 	ServiceFloat(string name, ALFRED* alfred);
 	~ServiceFloat();
+
+    void Update(float value);
 };
 
 /*----------------------------------------------------------------------------------------------*/
 
 class ServiceString: public Service
 {
+private:
+    string value;
+
 public:
     ServiceString(string name, ALFRED* alfred);
     ~ServiceString();
+
+    void Update(string value);
 };
 
 /*----------------------------------------------------------------------------------------------*/
 
 class ServiceData: public Service
 {
+private:
+    void* value;
+
 public:
 	ServiceData(string name, ALFRED* alfred, size_t size, string format);
 	~ServiceData();
+
+    void Update(const void* value);
 };
 
 #endif
