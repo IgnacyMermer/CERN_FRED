@@ -5,23 +5,20 @@
 #include "Alfred/rpcinfo.h"
 #include "Alfred/service.h"
 #include "Fred/fred.h"
+#include "Alfred/types.h"
 
 using namespace std;
 
 class CruAlfRpcInfo: public RpcInfoString
 {
 public:
-    enum Type
-    {
-        WRITE,
-        READ
-    };
-
-    CruAlfRpcInfo(string name, Fred* fred, Type type);
+    CruAlfRpcInfo(string name, Fred* fred, ALFRED_TYPES::CRU_TYPES type);
+    void setResponseService(ServiceString* responseService);
 
 private:
     const void* Execution(void* value);
-    Type type;
+    ALFRED_TYPES::CRU_TYPES type;
+    ServiceString* responseService;
 };
 
 #endif // CRUALFRPCINFO_H

@@ -3,12 +3,15 @@
 
 #include <string>
 #include "Alfred/command.h"
+#include "Alfred/service.h"
+#include "Fred/crualfrpcinfo.h"
 #include <thread>
 #include <condition_variable>
 #include <mutex>
 #include <atomic>
 #include <list>
 #include <algorithm>
+#include "Alfred/types.h"
 
 class Fred;
 class RpcInfoString;
@@ -16,23 +19,20 @@ class RpcInfoString;
 class CruRegisterCommand: public CommandString
 {
 public:
-    enum Type
-    {
-      READ,
-      WRITE
-    };
-
-    CruRegisterCommand(Type type, Fred* fred);
+    CruRegisterCommand(ALFRED_TYPES::CRU_TYPES type, string topicName, CruAlfRpcInfo* rpcInfo, Fred* fred);
     ~CruRegisterCommand();
 
 private:
-    Type type;
+    ALFRED_TYPES::CRU_TYPES type;
+    string name;
+    ServiceString* responseService;
+    CruAlfRpcInfo* rpcInfo;
 
     const void* Execution(void* value);
 
-    void executeWrite(vector<uint32_t>& message);
-    void executeRead(vector<uint32_t>& message);
-    string builAlfTopic(Type type, uint32_t alf, uint32_t serial);
+    void executeWrite(vector<string>& message);
+    void executeRead(vector<string>& message);
+    void executePatternPlayer(vector<string>& message);
 
     condition_variable conditionVar;
     thread* clearThread;
@@ -42,6 +42,8 @@ private:
 
     static void clearRequests(CruRegisterCommand* self);
     void newRequest(pair<string, RpcInfoString*> request);
+
+    static string getTypeReqName(ALFRED_TYPES::CRU_TYPES type, string topicName, const string& suffix);
 };
 
 #endif // CRUREGISTERCOMMAND_H

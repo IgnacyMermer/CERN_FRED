@@ -4,7 +4,6 @@
 #include <string>
 #include <iomanip>
 #include <sstream>
-#include "Parser/processmessage.h"
 #include "Alfred/print.h"
 #include "Parser/utility.h"
 #include "Fred/Config/instructions.h"
@@ -12,21 +11,44 @@
 
 void SCA::SCApad(string& line)
 {
-    stringstream ss;
-
-    size_t comma = line.find(',');
-    if (comma != string::npos)
+    vector<string> scaParts = Utility::splitString(line, ",");
+    if (scaParts.size() != 2)
     {
-        unsigned long command, data;
-        command = stol(line.substr(0, comma), 0, 16);
-        data = stol(line.substr(comma + 1), 0, 16);
-
-        if (command > 0xffffffff || data > 0xffffffff) throw runtime_error("SCA 16 bits exceeded!");
-
-        ss << "0x" << setw(8) << setfill('0') << hex << command << "," << "0x" << setw(8) << setfill('0') << hex << data;
-        line = ss.str();
+        throw runtime_error("SCA comma is missing or more than one comman occured!");
     }
-    else throw runtime_error("SCA comma is missing!");
+
+    if (scaParts[1] == "wait") //SCA wait
+    {
+        int32_t wait;
+
+        try
+        {
+            wait = stoi(scaParts[0]);
+        }
+        catch (invalid_argument& e)
+        {
+            throw runtime_error("SCA invalid wait value");
+        }
+
+        if (wait <= 0)
+        {
+            throw runtime_error("SCA invalid wait value");
+        }
+
+        line = to_string(wait) + ",wait";
+        return;
+    }
+
+    uint64_t command = stoull(scaParts[0], NULL, 16);
+    uint64_t data = stoull(scaParts[1], NULL, 16);
+    if (command > 0xffffffff || data > 0xffffffff)
+    {
+        throw runtime_error("SCA 32 bits exceeded!");
+    }
+
+    stringstream ss;
+    ss << "0x" << setw(8) << setfill('0') << hex << command << "," << "0x" << setw(8) << setfill('0') << hex << data;
+    line = ss.str();
 }
 
 vector<string> SCA::generateMessage(Instructions::Instruction& instructions, vector<string>& outputPattern, vector<string>& pollPattern, ProcessMessage* processMessage)
@@ -116,10 +138,20 @@ void SCA::checkIntegrity(const string& request, const string& response)
         transform(reqVec[i].begin(), reqVec[i].end(), reqVec[i].begin(), ::tolower);
         transform(resVec[i].begin(), resVec[i].end(), resVec[i].begin(), ::tolower);
 
-        if (resVec[i].length() != 21 || (resVec[i].substr(0, resVec[i].find(",")) != reqVec[i].substr(0, reqVec[i].find(","))))
+        vector<string> scaPartsReq = Utility::splitString(reqVec[i], ",");
+        vector<string> scaPartsRes = Utility::splitString(resVec[i], ",");
+        if (scaPartsReq.size() == 2 && scaPartsRes.size() > 0)
         {
-            throw runtime_error("SCA: Integrity check of received message failed!");
+            if (scaPartsReq[1] == "wait" || scaPartsReq.size() == scaPartsRes.size())
+            {
+                if (scaPartsReq[0] == scaPartsRes[0])
+                {
+                    continue;
+                }
+            }
         }
+
+        throw runtime_error("SCA: Integrity check of received message failed!");
     }
 }
 
@@ -138,6 +170,10 @@ vector<vector<unsigned long> > SCA::readbackValues(const string& message, const 
         if (pos != string::npos)
         {
             values.push_back(stoul(splitted[i].substr(pos + 1), NULL, 16)); //all 32 bits payloads
+        }
+        else
+        {
+            values.push_back(0); //because of SCA wait
         }
     }
 

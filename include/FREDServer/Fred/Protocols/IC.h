@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "Fred/Config/instructions.h"
+#include "Parser/processmessage.h"
 
 using namespace std;
 

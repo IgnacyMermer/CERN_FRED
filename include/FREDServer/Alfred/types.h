@@ -25,6 +25,13 @@ namespace ALFRED_TYPES
         RPC_SERVICE,
         RPC_CLIENT
     };
+
+    enum CRU_TYPES
+    {
+      READ,
+      WRITE,
+      PATTERN_PLAYER
+    };
 }
 
 #endif

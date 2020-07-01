@@ -34,12 +34,6 @@ void AlfClients::registerAlf(Location::AlfEntry &entry)
         if (clients[entry.id].count(serial->first) == 0)
         {
             clients[entry.id][serial->first] = map<int32_t, Nodes>();
-
-            if (entry.id.find("ALF") == 0)
-            {
-                this->fred->RegisterRpcInfo(new CruAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/LINK_0/REGISTER_WRITE", this->fred, CruAlfRpcInfo::WRITE));
-                this->fred->RegisterRpcInfo(new CruAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/LINK_0/REGISTER_READ", this->fred, CruAlfRpcInfo::READ));
-            }
         }
 
         for (size_t link = 0; link < serial->second.links.size(); link++)
@@ -73,6 +67,31 @@ AlfClients::Nodes AlfClients::createAlfInfo(string id, int32_t serial, int32_t l
     return nodes;
 }
 
+void AlfClients::registerCruAlf(Location::AlfEntry& entry)
+{
+    if (cruClients.count(entry.id) == 0)
+    {
+        cruClients[entry.id] = map<int32_t, CruNodes >();
+    }
+
+    for (auto serial = entry.serials.begin(); serial != entry.serials.end(); serial++)
+    {
+        if (cruClients[entry.id].count(serial->first) == 0)
+        {
+            CruNodes cruNodes;
+            cruNodes.registerWrite = new CruAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/REGISTER_WRITE", this->fred, ALFRED_TYPES::CRU_TYPES::WRITE);
+            cruNodes.registerRead = new CruAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/REGISTER_READ", this->fred, ALFRED_TYPES::CRU_TYPES::READ);
+            cruNodes.patternPlayer = new CruAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/PATTERN_PLAYER", this->fred, ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER);
+
+            this->fred->RegisterRpcInfo(cruNodes.registerWrite);
+            this->fred->RegisterRpcInfo(cruNodes.registerRead);
+            this->fred->RegisterRpcInfo(cruNodes.patternPlayer);
+
+            cruClients[entry.id][serial->first] = cruNodes;
+        }
+    }
+}
+
 AlfRpcInfo* AlfClients::getAlfNode(string alf, int32_t serial, int32_t link, Instructions::Type type)
 {
     Nodes& nodes = clients[alf][serial][link];
@@ -93,4 +112,21 @@ AlfRpcInfo* AlfClients::getAlfNode(string alf, int32_t serial, int32_t link, Ins
 Queue* AlfClients::getAlfQueue(string alf, int32_t serial, int32_t link)
 {
     return clients[alf][serial][link].queue;
+}
+
+CruAlfRpcInfo* AlfClients::getCruAlfNode(string alf, int32_t serial, ALFRED_TYPES::CRU_TYPES type)
+{
+    CruNodes& nodes = cruClients[alf][serial];
+
+    switch (type)
+    {
+    case ALFRED_TYPES::CRU_TYPES::WRITE:
+        return nodes.registerWrite;
+    case ALFRED_TYPES::CRU_TYPES::READ:
+        return nodes.registerRead;
+    case ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER:
+        return nodes.patternPlayer;
+    }
+
+    return NULL;
 }

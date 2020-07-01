@@ -8,6 +8,7 @@
 #include "Fred/Config/instructions.h"
 #include "Fred/Config/mapping.h"
 #include "Fred/Config/groups.h"
+#include "Fred/Config/crumapping.h"
 
 using namespace std;
 
@@ -21,6 +22,7 @@ public:
     Instructions instructions;
     Mapping mapping;
     Groups groups;
+    CruMapping cruMapping;
 
     Section(string name);
     string getName();

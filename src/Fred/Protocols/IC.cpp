@@ -4,7 +4,6 @@
 #include <string>
 #include <iomanip>
 #include <sstream>
-#include "Parser/processmessage.h"
 #include "Alfred/print.h"
 #include "Parser/utility.h"
 #include "Fred/Config/instructions.h"

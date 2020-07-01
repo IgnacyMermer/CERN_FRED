@@ -209,6 +209,93 @@ void Utility::checkMessageIntegrity(const string& request, const string& respons
     }
 }
 
+uint128_t Utility::stringToLargeNumber(const string& number)
+{
+    bool isHex = false;
+    string num = number;
+    if (num.find("0x") != string::npos)
+    {
+        num = num.substr(num.find("0x") + 2);
+        isHex = true;
+    }
+
+    if (num.size() == 0 || !all_of(num.begin(), num.end(), isHex ? ::isxdigit : ::isdigit))
+    {
+        throw invalid_argument("Not correctly formated number!");
+    }
+
+    if (isHex)
+    {
+        if (num.size() > 16)
+        {
+            string high = num.substr(0, num.size() - 16);
+            string low = num.substr(num.size() - 16);
+
+            uint128_t result = stoull(high, NULL, 16);
+            result <<= 64;
+            result |= stoull(low, NULL, 16);
+            return result;
+        }
+        else
+        {
+            return stoull(num, NULL, 16);
+        }
+    }
+    else
+    {
+        if (num.size() > 19)
+        {
+            string high = num.substr(0, num.size() - 19);
+            string low = num.substr(num.size() - 19);
+
+            uint128_t result = stoull(high, NULL, 10);
+            result *= 10000000000000000000u;
+            result |= stoull(low, NULL, 10);
+            return result;
+        }
+        else
+        {
+            return stoull(num, NULL, 10);
+        }
+    }
+}
+
+uint32_t Utility::stringToNumber(const string& number)
+{
+    bool isHex = false;
+    string num = number;
+    if (num.find("0x") != string::npos)
+    {
+        num = num.substr(num.find("0x") + 2);
+        isHex = true;
+    }
+
+    return stoul(num, NULL, isHex ? 16 : 10);
+}
+
+string Utility::largeNumberToHexString(const uint128_t number, bool addZeros)
+{
+    stringstream ss;
+
+    if (addZeros)
+    {
+        ss << hex << setfill('0') << setw(16) << (uint64_t)(number >> 64) << setfill('0') << setw(16) << (uint64_t)(number & 0xFFFFFFFFFFFFFFFF);
+    }
+    else
+    {
+        if (number >> 64)
+        {
+            ss << hex << (uint64_t)(number >> 64) << setfill('0') << setw(16) << (uint64_t)(number & 0xFFFFFFFFFFFFFFFF);
+        }
+        else
+        {
+            ss << hex << (uint64_t)(number & 0xFFFFFFFFFFFFFFFF);
+        }
+    }
+
+    return string("0x") + ss.str();
+}
+
 Utility::Utility()
 {
 

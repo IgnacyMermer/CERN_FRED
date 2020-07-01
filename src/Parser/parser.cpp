@@ -59,7 +59,7 @@ vector<Section> Parser::parseSections()
 
             rest = subsection;
 
-            vector<string> instructionsLines, mappingLines, groupsLines, maskingLines;
+            vector<string> instructionsLines, mappingLines, groupsLines, maskingLines, cruMappingLines;
 
             while (rest.size()) //rest is shrinking each loop
             {
@@ -82,6 +82,10 @@ vector<Section> Parser::parseSections()
                 else if (name == "MASK")
                 {
                     maskingLines = subsection;
+                }
+                else if (name == "CRU_MAPPING")
+                {
+                    cruMappingLines = subsection;
                 }
                 else
                 {
@@ -109,6 +113,7 @@ vector<Section> Parser::parseSections()
                     section.instructions = Instructions(instructionsLines, this->sectionsPath);
                     section.mapping = Mapping(mappingLines);
                     section.groups = Groups(groupsLines);
+                    section.cruMapping = CruMapping(cruMappingLines);
 
                     // next line will segfault if Mapping section is bad
                     //  e.g. wasn't processed due to bad section name

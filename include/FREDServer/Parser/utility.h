@@ -4,6 +4,9 @@
 #include <vector>
 #include <string>
 #include "Fred/Config/instructions.h"
+#include <stdint.h>
+
+typedef unsigned __int128 uint128_t;
 
 using namespace std;
 
@@ -22,6 +25,9 @@ public:
     static string readbackToString(vector<double> data);
     static vector<unsigned long> splitAlfResponse(const string &message, Instructions::Type type);
     static void checkMessageIntegrity(const string& request, const string& response, Instructions::Type type);
+    static uint128_t stringToLargeNumber(const string& number);
+    static uint32_t stringToNumber(const string& number);
+    static string largeNumberToHexString(const uint128_t number, bool addZeros = false);
 
 private:
     Utility();

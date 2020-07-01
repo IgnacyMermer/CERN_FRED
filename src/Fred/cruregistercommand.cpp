@@ -2,14 +2,18 @@
 #include "Alfred/print.h"
 #include "Fred/fred.h"
 #include "Parser/utility.h"
+#include "Fred/crualfrpcinfo.h"
 #include <sstream>
 #include <iomanip>
 #include <exception>
 
-CruRegisterCommand::CruRegisterCommand(Type type, Fred* fred): CommandString::CommandString(fred->Name() + (type == WRITE ? "/CRU_REGISTER/WRITE_REQ" : "/CRU_REGISTER/READ_REQ"), (ALFRED*)fred)
+CruRegisterCommand::CruRegisterCommand(ALFRED_TYPES::CRU_TYPES type, string topicName, CruAlfRpcInfo* rpcInfo, Fred* fred): CommandString::CommandString(fred->Name() + CruRegisterCommand::getTypeReqName(type, topicName, "REQ"), (ALFRED*)fred)
 {
     this->type = type;
-    fred->RegisterService(fred->Name() + (type == WRITE ? "/CRU_REGISTER/WRITE_ANS" : "/CRU_REGISTER/READ_ANS"), ALFRED_TYPES::DIM_TYPE::STRING);
+    this->rpcInfo = rpcInfo;
+    this->name = fred->Name() + CruRegisterCommand::getTypeReqName(type, topicName, "REQ");
+    this->responseService = new ServiceString(fred->Name() + CruRegisterCommand::getTypeReqName(type, topicName, "ANS"), (ALFRED*)fred);
+    fred->RegisterService(this->responseService);
 
     this->isFinished = false;
     this->isProcessing = false;
@@ -28,83 +32,117 @@ const void* CruRegisterCommand::Execution(void *value)
 {
     if (!value)
     {
-        Print::PrintError("Invalid request, no value received!");
+        Print::PrintError(name, "Invalid request, no value received!");
     }
 
     string request(static_cast<char*>(value));
 
-    Print::PrintVerbose("Received command:\n" + request);
+    Print::PrintVerbose(name, "Received command:\n" + request);
 
-    vector<uint32_t> splitted;
-    vector<double> splittedDouble = Utility::splitString2Num(request, ",");
-    for (size_t i = 0; i < splittedDouble.size(); i++)
-    {
-        splitted.push_back(uint32_t(splittedDouble[i]));
-    }
+    vector<string> splitted = Utility::splitString(request, ",");
 
-    if (this->type == WRITE)
+    if (this->type == ALFRED_TYPES::CRU_TYPES::WRITE)
     {
-        if (splitted.size() < 4)
+        if (splitted.size() != 2)
         {
-            Print::PrintError("Invalid number of arguments received for CRU_REGISTER WRITE");
+            Print::PrintError(name, "Invalid number of arguments received for CRU_REGISTER WRITE");
             return NULL;
         }
 
         executeWrite(splitted);
     }
-    else
+    else if (this->type == ALFRED_TYPES::CRU_TYPES::READ)
     {
-        if (splitted.size() < 3)
+        if (splitted.size() != 1)
         {
-            Print::PrintError("Invalid number of arguments received for CRU_REGISTER READ");
+            Print::PrintError(name, "Invalid number of arguments received for CRU_REGISTER READ");
             return NULL;
         }
 
         executeRead(splitted);
     }
+    else if (this->type == ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER)
+    {
+        if (splitted.size() != 11)
+        {
+            Print::PrintError(name, "Invalid number of arguments received for PATTERN PLAYER");
+            return NULL;
+        }
+
+        executePatternPlayer(splitted);
+    }
 
     return NULL;
 }
 
-void CruRegisterCommand::executeWrite(vector<uint32_t>& message)
+void CruRegisterCommand::executeWrite(vector<string>& message) // 0 - ADDR, 1 - VALUE
 {
-    stringstream requestSS;
-    requestSS << hex << message[2] << "\n" << hex << message[3];
+    stringstream request;
 
-    string request(requestSS.str());
-    string alfTopic = builAlfTopic(WRITE, message[0], message[1]);
-
-    RpcInfoString* rpcInfo = (RpcInfoString*)Parent()->GetRpcInfo(alfTopic);
-    if (!rpcInfo)
+    try
     {
-        Print::PrintError("Cannot find RPC Info " + alfTopic + "!");
+        uint32_t address = Utility::stringToNumber(message[0]);
+        uint32_t value = Utility::stringToNumber(message[1]);
+
+        request << "0x" << hex << address << "," << "0x" << hex << value;
+    }
+    catch (invalid_argument& e)
+    {
+        Print::PrintError(name, "Invalid request received!");
         return;
     }
 
-    newRequest(make_pair(request, rpcInfo));
+    newRequest(make_pair(request.str(), rpcInfo));
 }
 
-void CruRegisterCommand::executeRead(vector<uint32_t>& message)
+void CruRegisterCommand::executeRead(vector<string>& message) // 0 - ADDR
 {
-    stringstream requestSS;
-    requestSS << hex << message[2];
+    stringstream request;
 
-    string request(requestSS.str());
-    string alfTopic = builAlfTopic(READ, message[0], message[1]);
-
-    RpcInfoString* rpcInfo = (RpcInfoString*)Parent()->GetRpcInfo(alfTopic);
-    if (!rpcInfo)
+    try
     {
-        Print::PrintError("Cannot find RPC Info " + alfTopic + "!");
+        uint32_t address = Utility::stringToNumber(message[0]);
+
+        request << "0x" << hex << address;
+    }
+    catch (invalid_argument& e)
+    {
+        Print::PrintError(name, "Invalid request received!");
         return;
     }
 
-    newRequest(make_pair(request, rpcInfo));
+    newRequest(make_pair(request.str(), rpcInfo));
 }
 
-string CruRegisterCommand::builAlfTopic(Type type, uint32_t alf, uint32_t serial)
+void CruRegisterCommand::executePatternPlayer(vector<string>& message) // 0 - SYNC_P, 1 - RESET_P, 2 - IDLE_P, 3 - SYNC_L, 4 - SYNC_D, 5 - RESET_L, 6 - RESET_TS, 7 - SYNC_TS, 8 - SYNC_S, 9 - TRIG_S, 10 - TRIG_R
 {
-    return "ALF" + to_string(alf) + "/SERIAL_" + to_string(serial) + "/LINK_0/REGISTER_" + (type == WRITE ? "WRITE" : "READ");
+    stringstream request;
+
+    try
+    {
+        uint128_t syncPattern = Utility::stringToLargeNumber(message[0]);
+        uint128_t resetPattern = Utility::stringToLargeNumber(message[1]);
+        uint128_t idlePattern = Utility::stringToLargeNumber(message[2]);
+        uint32_t syncLength = Utility::stringToNumber(message[3]);
+        uint32_t syncDelay = Utility::stringToNumber(message[4]);
+        uint32_t resetLength = Utility::stringToNumber(message[5]);
+        uint32_t resetTriggerSelect = Utility::stringToNumber(message[6]);
+        uint32_t syncTriggerSelect = Utility::stringToNumber(message[7]);
+        bool syncAtStart = message[8] == "true";
+        bool triggerSync = message[9] == "true";
+        bool triggerReset = message[10] == "true";
+
+        request << Utility::largeNumberToHexString(syncPattern) << "\n" << Utility::largeNumberToHexString(resetPattern) << "\n" << Utility::largeNumberToHexString(idlePattern)
+                << "\n" << to_string(syncLength) << "\n" << to_string(syncDelay) << "\n" << to_string(resetLength) << "\n" << to_string(resetTriggerSelect) << "\n" << to_string(syncTriggerSelect)
+                << "\n" << (syncAtStart ? "true" : "false") << "\n" << (triggerSync ? "true" : "false") << "\n" << (triggerReset ? "true" : "false");
+    }
+    catch (invalid_argument& e)
+    {
+        Print::PrintError(name, "Invalid request received!");
+        return;
+    }
+
+    newRequest(make_pair(request.str(), rpcInfo));
 }
 
 void CruRegisterCommand::clearRequests(CruRegisterCommand *self)
@@ -133,7 +171,9 @@ void CruRegisterCommand::clearRequests(CruRegisterCommand *self)
             }
             //do processing
 
+            Print::PrintVerbose(self->name, "Sending request to " + request.second->Name() + "\n" + request.first);
             char* buffer = strdup(request.first.c_str());
+            dynamic_cast<CruAlfRpcInfo*>(request.second)->setResponseService(self->responseService);
             request.second->Send(buffer);
             free(buffer);
 
@@ -152,5 +192,18 @@ void CruRegisterCommand::newRequest(pair<string, RpcInfoString*> request)
     if (!isProcessing)
     {
         conditionVar.notify_one();
+    }
+}
+
+string CruRegisterCommand::getTypeReqName(ALFRED_TYPES::CRU_TYPES type, string topicName, const string& suffix)
+{
+    switch (type)
+    {
+    case ALFRED_TYPES::CRU_TYPES::READ:
+        return "/" + topicName + "/REGISTER_READ_" + suffix;
+    case ALFRED_TYPES::CRU_TYPES::WRITE:
+        return "/" + topicName + "/REGISTER_WRITE_" + suffix;
+    case ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER:
+        return "/" + topicName + "/PATTERN_PLAYER_" + suffix;
     }
 }

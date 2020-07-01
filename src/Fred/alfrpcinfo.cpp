@@ -109,7 +109,7 @@ const void* AlfRpcInfo::Execution(void *value)
     }
     else
     {
-        Print::PrintWarning(currentTransaction.second->name, "No current transaction available! Discarding message");
+        Print::PrintWarning(this->name, "No current transaction available! Discarding message");
         clearTransaction();
     }
 

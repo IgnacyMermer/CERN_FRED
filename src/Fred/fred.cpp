@@ -106,6 +106,12 @@ void Fred::generateAlfs()
         {
             alfClients.registerAlf(alf->second);
         }
+
+        map<string, Location::AlfEntry>& cruAlfs = sections[i].cruMapping.alfList();
+        for (auto cruAlf = cruAlfs.begin(); cruAlf != cruAlfs.end(); cruAlf++)
+        {
+            alfClients.registerCruAlf(cruAlf->second);
+        }
     }
 }
 
@@ -124,10 +130,15 @@ void Fred::generateTopics()
         {
             fredTopics.registerGroup(sections[i].getName(), *group);
         }
-    }
 
-    RegisterCommand(new CruRegisterCommand(CruRegisterCommand::WRITE, this));
-    RegisterCommand(new CruRegisterCommand(CruRegisterCommand::READ, this));
+        vector<CruMapping::CruUnit>& cruUnits = sections[i].cruMapping.getCruUnits();
+        for (auto cruUnit = cruUnits.begin(); cruUnit != cruUnits.end(); cruUnit++)
+        {
+            RegisterCommand(new CruRegisterCommand(ALFRED_TYPES::CRU_TYPES::WRITE, cruUnit->cruUnitName, alfClients.getCruAlfNode(cruUnit->alf.alfId, cruUnit->alf.serialId, ALFRED_TYPES::CRU_TYPES::WRITE), this));
+            RegisterCommand(new CruRegisterCommand(ALFRED_TYPES::CRU_TYPES::READ, cruUnit->cruUnitName, alfClients.getCruAlfNode(cruUnit->alf.alfId, cruUnit->alf.serialId, ALFRED_TYPES::CRU_TYPES::READ), this));
+            RegisterCommand(new CruRegisterCommand(ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER, cruUnit->cruUnitName, alfClients.getCruAlfNode(cruUnit->alf.alfId, cruUnit->alf.serialId, ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER), this));
+        }
+    }
 }
 
 void Fred::checkAlfs()
