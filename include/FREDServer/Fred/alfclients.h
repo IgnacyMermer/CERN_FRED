@@ -57,6 +57,9 @@ public:
     vector<Queue*> getAlfCruQueues(string alf, int32_t serial);
 
     CruAlfRpcInfo* getCruAlfNode(string alf, int32_t serial, ALFRED_TYPES::CRU_TYPES type);
+
+    vector<CruAlfRpcInfo*> getAllCruRpcs();
+    vector<LlaAlfRpcInfo*> getAllLlaRpcs();
 };
 
 #endif // ALFCLIENTS_H

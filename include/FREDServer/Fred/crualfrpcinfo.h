@@ -15,6 +15,8 @@ public:
     CruAlfRpcInfo(string name, Fred* fred, ALFRED_TYPES::CRU_TYPES type);
     void setResponseService(ServiceString* responseService);
 
+    const string& getName();
+
 private:
     const void* Execution(void* value);
     ALFRED_TYPES::CRU_TYPES type;

@@ -23,7 +23,7 @@ private:
 public:
     AlfRpcInfo(string name, string dns, Fred* fred);
     void setTransaction(pair<ProcessMessage*, ChainTopic*> currentTransaction);
-    string& getName();
+    const string& getName();
 };
 
 #endif // ALFRPCINFO_H

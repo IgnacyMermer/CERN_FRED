@@ -38,3 +38,8 @@ bool LlaAlfRpcInfo::requestLlaSession()
     Print::PrintError(this->type == ALFRED_TYPES::LLA_TYPES::START ? "Cannot start LLA Session!" : "Cannot stop LLA Session!");
     return false;
 }
+
+const string& LlaAlfRpcInfo::getName()
+{
+    return this->name;
+}

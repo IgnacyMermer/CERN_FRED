@@ -192,3 +192,36 @@ CruAlfRpcInfo* AlfClients::getCruAlfNode(string alf, int32_t serial, ALFRED_TYPE
 
     return NULL;
 }
+
+vector<CruAlfRpcInfo*> AlfClients::getAllCruRpcs()
+{
+    vector<CruAlfRpcInfo*> rpcInfos;
+
+    for (auto alf = this->cruClients.begin(); alf != this->cruClients.end(); alf++)
+    {
+        for (auto serial = alf->second.begin(); serial != alf->second.end(); serial++)
+        {
+            rpcInfos.push_back(serial->second.registerWrite);
+            rpcInfos.push_back(serial->second.registerRead);
+            rpcInfos.push_back(serial->second.patternPlayer);
+        }
+    }
+
+    return rpcInfos;
+}
+
+vector<LlaAlfRpcInfo*> AlfClients::getAllLlaRpcs()
+{
+    vector<LlaAlfRpcInfo*> rpcInfos;
+
+    for (auto alf = this->llaClients.begin(); alf != this->llaClients.end(); alf++)
+    {
+        for (auto serial = alf->second.begin(); serial != alf->second.end(); serial++)
+        {
+            rpcInfos.push_back(serial->second.llaStart);
+            rpcInfos.push_back(serial->second.llaStop);
+        }
+    }
+
+    return rpcInfos;
+}

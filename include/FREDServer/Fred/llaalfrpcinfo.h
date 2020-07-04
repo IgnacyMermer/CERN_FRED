@@ -14,6 +14,8 @@ public:
     LlaAlfRpcInfo(string name, Fred* fred, ALFRED_TYPES::LLA_TYPES type);
     bool requestLlaSession();
 
+    const string& getName();
+
 private:
     const void* Execution(void* value);
     ALFRED_TYPES::LLA_TYPES type;

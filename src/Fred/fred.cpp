@@ -12,6 +12,7 @@
 #include "Fred/Mapi/mapigroup.h"
 #include "Alfred/dimutilities.h"
 #include "Fred/alfrpcinfo.h"
+#include "Fred/llaalfrpcinfo.h"
 
 bool Fred::terminate = false;
 
@@ -166,14 +167,18 @@ void Fred::checkAlfs()
         {
             services.push_back(topic->second.alfLink.second->getName());
         }
-        /*pair <string, string> alfred;
-        
-        alfred.first = topic->second.name;
-        alfred.second = topic->second.alfLink->getName();
+    }
 
-        //cout << alfred.first << " -> " << alfred.second << endl; // print "topic -> alfLink"
-        
-        services.push_back(alfred.second);*/
+    vector<CruAlfRpcInfo*> cruRpcInfos = this->alfClients.getAllCruRpcs();
+    for (size_t i = 0; i < cruRpcInfos.size(); i++)
+    {
+        services.push_back(cruRpcInfos[i]->getName());
+    }
+
+    vector<LlaAlfRpcInfo*> llaRpcInfos = this->alfClients.getAllLlaRpcs();
+    for (size_t i = 0; i < llaRpcInfos.size(); i++)
+    {
+        services.push_back(llaRpcInfos[i]->getName());
     }
 
     DimUtilities::checkServices(services);
