@@ -20,7 +20,6 @@ private:
     vector<vector<double> > input;
     vector<string> outputPattern;
     vector<string> pollPattern;
-    static const string SUCCESS, FAILURE;
     string fullMessage;
     GroupCommand* groupCommand;
     Mapi* mapi;
@@ -29,6 +28,8 @@ private:
     bool checkMessage(string& message);
 
 public:
+    static const string SUCCESS, FAILURE;
+
     void parseInputVariables(string& line, vector<string>& inVars, int32_t iteration);
 
     ProcessMessage(string message, int32_t placeId, bool useCru);

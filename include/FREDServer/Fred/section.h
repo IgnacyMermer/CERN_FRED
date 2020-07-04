@@ -9,6 +9,7 @@
 #include "Fred/Config/mapping.h"
 #include "Fred/Config/groups.h"
 #include "Fred/Config/crumapping.h"
+#include "Fred/Config/llamapping.h"
 
 using namespace std;
 
@@ -23,6 +24,7 @@ public:
     Mapping mapping;
     Groups groups;
     CruMapping cruMapping;
+    LlaMapping llaMapping;
 
     Section(string name);
     string getName();

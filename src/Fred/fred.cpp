@@ -113,6 +113,15 @@ void Fred::generateAlfs()
             alfClients.registerCruAlf(cruAlf->second);
         }
     }
+
+    for (size_t i = 0; i < sections.size(); i++)
+    {
+        map<string, Location::AlfEntry>& llaAlfs = sections[i].llaMapping.alfList();
+        for (auto llaAlf = llaAlfs.begin(); llaAlf != llaAlfs.end(); llaAlf++)
+        {
+            alfClients.registerLlaAlf(llaAlf->second);
+        }
+    }
 }
 
 void Fred::generateTopics()

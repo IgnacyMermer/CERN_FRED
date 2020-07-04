@@ -49,7 +49,7 @@ vector<Section> Parser::parseSections()
     {
         vector<string> lines = readFile(files[i], this->sectionsPath);
 
-        if(!lines.empty())
+        if (!lines.empty())
         {
             string name;
             vector<string> rest;
@@ -59,7 +59,7 @@ vector<Section> Parser::parseSections()
 
             rest = subsection;
 
-            vector<string> instructionsLines, mappingLines, groupsLines, maskingLines, cruMappingLines;
+            vector<string> instructionsLines, mappingLines, groupsLines, maskingLines, cruMappingLines, llaMappingLines;
 
             while (rest.size()) //rest is shrinking each loop
             {
@@ -87,6 +87,10 @@ vector<Section> Parser::parseSections()
                 {
                     cruMappingLines = subsection;
                 }
+                else if (name == "LLA_MAPPING")
+                {
+                    llaMappingLines = subsection;
+                }
                 else
                 {
                     Print::PrintError(files[i] + " has invalid name of paragraph: " + name + "!");
@@ -94,7 +98,7 @@ vector<Section> Parser::parseSections()
                 }
             }
 
-            if(!instructionsLines.size()) //section INSTRUCTIONS is mandatory
+            if (!instructionsLines.size()) //section INSTRUCTIONS is mandatory
             {
                 Print::PrintError("INSTRUCTIONS section in " + files[i] + " is missing!");
                 this->badFiles = true;
@@ -106,7 +110,7 @@ vector<Section> Parser::parseSections()
                 this->badFiles = true;
             }
 
-            if(!this->badFiles)
+            if (!this->badFiles)
             {
                 try
                 {
@@ -114,6 +118,7 @@ vector<Section> Parser::parseSections()
                     section.mapping = Mapping(mappingLines);
                     section.groups = Groups(groupsLines);
                     section.cruMapping = CruMapping(cruMappingLines);
+                    section.llaMapping = LlaMapping(llaMappingLines);
 
                     // next line will segfault if Mapping section is bad
                     //  e.g. wasn't processed due to bad section name
@@ -152,7 +157,7 @@ void Parser::checkGroup(Section section)
             throw runtime_error("Non existing group topic");
         }
 
-        if(i->unitIds.size() == 0)
+        if (i->unitIds.size() == 0)
         {
             Print::PrintError("Group " + i->name + " in section " + section.getName() + " has no units!");
             throw runtime_error("Group with no units");
@@ -273,7 +278,7 @@ bool Parser::balancedBraces(vector<string> lines, string name)
   
     for (int i = 0; i < lines.size(); i++) 
     {
-        for(int j = 0; j < lines[i].length(); j++)
+        for (int j = 0; j < lines[i].length(); j++)
         {     
             if (lines[i][j]=='('||lines[i][j]=='['||lines[i][j]=='{') c++;
             
@@ -281,7 +286,7 @@ bool Parser::balancedBraces(vector<string> lines, string name)
         }
     }
 
-    if(c != 0)
+    if (c != 0)
     {
         Print::PrintError(name + " has mismatched braces!");
     }

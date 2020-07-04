@@ -14,6 +14,8 @@ using namespace std;
 
 class AlfRpcInfo;
 class CruAlfRpcInfo;
+class LlaAlfRpcInfo;
+class LlaLock;
 
 class AlfClients
 {
@@ -29,9 +31,16 @@ public:
         CruAlfRpcInfo *registerWrite, *registerRead, *patternPlayer;
     };
 
+    struct LlaNodes
+    {
+        LlaAlfRpcInfo *llaStart, *llaStop;
+        LlaLock *llaLock;
+    };
+
 private:
     map<string, map<int32_t, map<int32_t, Nodes> > > clients;
     map<string, map<int32_t, CruNodes> > cruClients;
+    map<string, map<int32_t, LlaNodes> > llaClients;
     Fred* fred;
 
 public:
@@ -41,9 +50,11 @@ public:
     void registerAlf(Location::AlfEntry& entry);
     Nodes createAlfInfo(string id, int32_t serial, int32_t link);
     void registerCruAlf(Location::AlfEntry& entry);
+    void registerLlaAlf(Location::AlfEntry& entry);
 
     AlfRpcInfo* getAlfNode(string alf, int32_t serial, int32_t link, Instructions::Type type);
     Queue* getAlfQueue(string alf, int32_t serial, int32_t link);
+    vector<Queue*> getAlfCruQueues(string alf, int32_t serial);
 
     CruAlfRpcInfo* getCruAlfNode(string alf, int32_t serial, ALFRED_TYPES::CRU_TYPES type);
 };

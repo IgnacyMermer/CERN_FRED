@@ -142,12 +142,13 @@ void SCA::checkIntegrity(const string& request, const string& response)
         vector<string> scaPartsRes = Utility::splitString(resVec[i], ",");
         if (scaPartsReq.size() == 2 && scaPartsRes.size() > 0)
         {
-            if (scaPartsReq[1] == "wait" || scaPartsReq.size() == scaPartsRes.size())
+            if (scaPartsReq[1] == "wait" && scaPartsReq[0] == scaPartsRes[0])
             {
-                if (scaPartsReq[0] == scaPartsRes[0])
-                {
-                    continue;
-                }
+                continue;
+            }
+            else if (scaPartsReq.size() == scaPartsRes.size() && scaPartsReq[0].substr(0, 6) == scaPartsRes[0].substr(0, 6)) //check only CH and TRID
+            {
+                continue;
             }
         }
 
