@@ -15,7 +15,7 @@ Parser::Parser(string sectionsPath)
     this->badFiles = false;
 }
 
-vector<string> Parser::findFiles(string directory)
+vector<string> Parser::findFiles(string directory, const string &suffix)
 {
     DIR* dir = opendir(directory.c_str());
     if (!dir)
@@ -29,7 +29,7 @@ vector<string> Parser::findFiles(string directory)
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL)
     {
-        if (entry->d_name[0] != '.' && strstr(entry->d_name, ".section") != NULL)
+        if (entry->d_name[0] != '.' && strstr(entry->d_name, suffix.c_str()) != NULL)
         {
             files.push_back(entry->d_name);
         }
@@ -59,7 +59,7 @@ vector<Section> Parser::parseSections()
 
             rest = subsection;
 
-            vector<string> instructionsLines, mappingLines, groupsLines, maskingLines, cruMappingLines, llaMappingLines;
+            vector<string> instructionsLines, mappingLines, groupsLines, maskingLines;
 
             while (rest.size()) //rest is shrinking each loop
             {
@@ -82,14 +82,6 @@ vector<Section> Parser::parseSections()
                 else if (name == "MASK")
                 {
                     maskingLines = subsection;
-                }
-                else if (name == "CRU_MAPPING")
-                {
-                    cruMappingLines = subsection;
-                }
-                else if (name == "LLA_MAPPING")
-                {
-                    llaMappingLines = subsection;
                 }
                 else
                 {
@@ -117,8 +109,6 @@ vector<Section> Parser::parseSections()
                     section.instructions = Instructions(instructionsLines, this->sectionsPath);
                     section.mapping = Mapping(mappingLines);
                     section.groups = Groups(groupsLines);
-                    section.cruMapping = CruMapping(cruMappingLines);
-                    section.llaMapping = LlaMapping(llaMappingLines);
 
                     // next line will segfault if Mapping section is bad
                     //  e.g. wasn't processed due to bad section name
@@ -133,6 +123,66 @@ vector<Section> Parser::parseSections()
                 } 
             }
             sections.push_back(section);  
+        }
+        else
+        {
+            badFiles = true;
+        }
+    }
+    return sections;
+}
+
+vector<Section> Parser::parseCruSections()
+{
+    vector<Section> sections;
+
+    vector<string> files = findFiles(this->sectionsPath, ".cru");
+    for (size_t i = 0; i < files.size(); i++)
+    {
+        vector<string> lines = readFile(files[i], this->sectionsPath);
+
+        if (!lines.empty())
+        {
+            Section section(""); //CRU section has no name
+
+            vector<string> cruMappingLines, llaMappingLines;
+
+            while (lines.size()) //lines is shrinking each loop
+            {
+                vector<string> temp;
+                string name;
+                vector<string> subsection = getSubsection(lines, "{}", name, temp);
+                lines = temp;
+
+                if (name == "CRU_MAPPING")
+                {
+                    cruMappingLines = subsection;
+                }
+                else if (name == "LLA_MAPPING")
+                {
+                    llaMappingLines = subsection;
+                }
+                else
+                {
+                    Print::PrintError(files[i] + " has invalid name of paragraph: " + name + "!");
+                    this->badFiles = true;
+                }
+            }
+
+            if (!this->badFiles)
+            {
+                try
+                {
+                    section.cruMapping = CruMapping(cruMappingLines);
+                    section.llaMapping = LlaMapping(llaMappingLines);
+                }
+                catch (exception& e)
+                {
+                    Print::PrintError(e.what());
+                    this->badFiles = true;
+                }
+            }
+            sections.push_back(section);
         }
         else
         {

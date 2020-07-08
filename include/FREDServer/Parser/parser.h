@@ -12,12 +12,13 @@ class Parser
 private:
     string sectionsPath, boardsPath;
 
-    vector<string> findFiles(string directory);
+    vector<string> findFiles(string directory, const string& suffix = ".section");
 
 public:
 	bool badFiles;
     Parser(string sectionsPath);
     vector<Section> parseSections();
+    vector<Section> parseCruSections();
     static vector<string> getSubsection(vector<string> full, string bracets, string& name, vector<string>& rest);
     static vector<string> readFile(string fileName, string directory);
     static bool balancedBraces(vector<string> lines, string name);

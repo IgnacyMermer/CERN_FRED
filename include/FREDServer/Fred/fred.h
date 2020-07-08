@@ -18,7 +18,7 @@ private:
     void generateTopics();
     void checkAlfs();
 
-    vector<Section> sections;
+    vector<Section> sections, cruSections;
     AlfClients alfClients;
     FredTopics fredTopics;
 

@@ -30,6 +30,7 @@ Fred::Fred(bool parseOnly, string fredName, string dnsName, string mainDirectory
     {
         Parser parser(mainDirectory);
         sections = parser.parseSections();
+        cruSections = parser.parseCruSections();
 
         if(parser.badFiles)
         {
@@ -107,17 +108,17 @@ void Fred::generateAlfs()
         {
             alfClients.registerAlf(alf->second);
         }
+    }
 
-        map<string, Location::AlfEntry>& cruAlfs = sections[i].cruMapping.alfList();
+    for (size_t i = 0; i < cruSections.size(); i++)
+    {
+        map<string, Location::AlfEntry>& cruAlfs = cruSections[i].cruMapping.alfList();
         for (auto cruAlf = cruAlfs.begin(); cruAlf != cruAlfs.end(); cruAlf++)
         {
             alfClients.registerCruAlf(cruAlf->second);
         }
-    }
 
-    for (size_t i = 0; i < sections.size(); i++)
-    {
-        map<string, Location::AlfEntry>& llaAlfs = sections[i].llaMapping.alfList();
+        map<string, Location::AlfEntry>& llaAlfs = cruSections[i].llaMapping.alfList();
         for (auto llaAlf = llaAlfs.begin(); llaAlf != llaAlfs.end(); llaAlf++)
         {
             alfClients.registerLlaAlf(llaAlf->second);
@@ -140,8 +141,11 @@ void Fred::generateTopics()
         {
             fredTopics.registerGroup(sections[i].getName(), *group);
         }
+    }
 
-        vector<CruMapping::CruUnit>& cruUnits = sections[i].cruMapping.getCruUnits();
+    for (size_t i = 0; i < cruSections.size(); i++)
+    {
+        vector<CruMapping::CruUnit>& cruUnits = cruSections[i].cruMapping.getCruUnits();
         for (auto cruUnit = cruUnits.begin(); cruUnit != cruUnits.end(); cruUnit++)
         {
             RegisterCommand(new CruRegisterCommand(ALFRED_TYPES::CRU_TYPES::WRITE, cruUnit->cruUnitName, alfClients.getCruAlfNode(cruUnit->alf.alfId, cruUnit->alf.serialId, ALFRED_TYPES::CRU_TYPES::WRITE), this));
@@ -212,10 +216,11 @@ bool Fred::commandLineArguments(int argc, char** argv)
 {
     struct option long_options[] =
     {
-        {"verbose", no_argument, 0, 'v'},
-        {"log", required_argument, 0, 'l'},
-        {"help", no_argument, 0, 'h'},
-        {"parse", no_argument, 0, 'p'}
+        {"verbose", no_argument, NULL, 'v'},
+        {"log", required_argument, NULL, 'l'},
+        {"help", no_argument, NULL, 'h'},
+        {"parse", no_argument, NULL, 'p'},
+        {NULL, 0, NULL, 0}
     };
 
     bool parseOnly = false;
