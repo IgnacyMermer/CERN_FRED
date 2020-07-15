@@ -94,15 +94,15 @@ vector<Section> Parser::parseSections()
                 }
             }
 
-            if(!instructionsLines.size()) //section INSTRUCTIONS is mandatory
+            if((!instructionsLines.size() && mappingLines.size()) || (instructionsLines.size() && !mappingLines.size()))
             {
-                Print::PrintError("INSTRUCTIONS section in " + files[i] + " is missing!");
+                if (!instructionsLines.size()) Print::PrintError("INSTRUCTIONS section in file '" + files[i] + "' is missing!");
+                if (!mappingLines.size()) Print::PrintError("MAPPING section in file '" + files[i] + "' is missing!");
                 this->badFiles = true;
-
             }
-            if (!mappingLines.size()) //section MAPPING is mandatory
+            else if (!cruMappingLines.size() && !instructionsLines.size() && !mappingLines.size())
             {
-                Print::PrintError("MAPPING section in " + files[i] + " is missing!");
+                Print::PrintError("ALL sections in file '" + files[i] + "' are missing! Must contain 'CRU_MAPPING' or {'INSTRUCTIONS' and 'MAPPING'}");
                 this->badFiles = true;
             }
 
