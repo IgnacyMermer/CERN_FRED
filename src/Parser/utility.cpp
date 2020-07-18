@@ -24,11 +24,11 @@ vector<double> Utility::splitString2Num(const string &text, string by)
     {
         if (nums[j].find('x') != string::npos)
         {
-            result.push_back(double(stoi(nums[j].substr(nums[j].find('x') + 1), NULL, 16)));
+            result.push_back(double(stoll(nums[j].substr(nums[j].find('x') + 1), NULL, 16)));
         }
         else
         {
-            result.push_back(stof(nums[j]));
+            result.push_back(stod(nums[j]));
         }
     }
 
