@@ -1,6 +1,6 @@
 ///
 /// @file      calculator.hpp
-/// @brief     calculator::eval(const std::string&) evaluates an integer
+/// @brief     calculator::eval(const std::string&) evaluates an int64_teger
 ///            arithmetic expression and returns the result. If an error
 ///            occurs a calculator::error exception is thrown.
 ///            <https://github.com/kimwalisch/calculator>
@@ -49,7 +49,7 @@
 ///
 /// calculator::eval(std::string&) relies on the ExpressionParser
 /// class which is a simple C++ operator precedence parser with infix
-/// notation for integer arithmetic expressions.
+/// notation for int64_teger arithmetic expressions.
 /// ExpressionParser has its roots in a JavaScript parser published
 /// at: http://stackoverflow.com/questions/28256/equation-expression-parser-with-precedence/114961#114961
 /// The same author has also published an article about his operator
@@ -96,15 +96,15 @@ template <typename T>
 class ExpressionParser
 {
 public:
-  /// Evaluate an integer arithmetic expression and return its result.
+  /// Evaluate an int64_teger arithmetic expression and return its result.
   /// @throw error if parsing fails.
   ///
-  T eval(const std::string& expr, std::map<std::string, int>& tempMap);
+  T eval(const std::string& expr, std::map<std::string, int64_t>& tempMap);
 
-  /// Get the integer value of a character.
-  T eval(char c, std::map<std::string, int> &tempMap);
+  /// Get the int64_teger value of a character.
+  T eval(char c, std::map<std::string, int64_t> &tempMap);
 
-  //std::map<const std::string&, int> setVariable(const std::string name, int value);
+  //std::map<const std::string&, int64_t> setVariable(const std::string name, int64_t value);
 
 
 private:
@@ -135,11 +135,11 @@ private:
   struct Operator
   {
     /// Operator, one of the OPERATOR_* enum definitions
-    int op;
-    int precedence;
+    int64_t op;
+    int64_t precedence;
     /// 'L' = left or 'R' = right
-    int associativity;
-    Operator(int opr, int prec, int assoc) :
+    int64_t associativity;
+    Operator(int64_t opr, int64_t prec, int64_t assoc) :
       op(opr),
       precedence(prec),
       associativity(assoc)
@@ -154,7 +154,7 @@ private:
       op(opr),
       value(val)
     { }
-    int getPrecedence() const
+    int64_t getPrecedence() const
     {
       return op.precedence;
     }
@@ -173,7 +173,7 @@ private:
   /// top of the stack has lower precedence.
   std::stack<OperatorValue> stack_;
   /// list of variables and corresponding values
-  std::map<std::string, int> vars_;
+  std::map<std::string, int64_t> vars_;
 
   /// Exponentiation by squaring, x^n.
   static T pow(T x, T n);
@@ -220,7 +220,7 @@ private:
 
   bool isHex() const;
 
-  /// Parse an integer value at the current expression index.
+  /// Parse an int64_teger value at the current expression index.
   /// The unary `+', `-' and `~' operators and opening
   /// parentheses `(' cause recursion.
   ///
@@ -234,31 +234,31 @@ private:
 };
 
 template <typename T>
-inline T eval(const std::string& expression, std::map<std::string, int>& tempMap)
+inline T eval(const std::string& expression, std::map<std::string, int64_t>& tempMap)
 {
   ExpressionParser<T> parser;
   return parser.eval(expression, tempMap);
 }
 
 template <typename T>
-inline T eval(char c, std::map<std::string, int>& tempMap)
+inline T eval(char c, std::map<std::string, int64_t>& tempMap)
 {
   ExpressionParser<T> parser;
   return parser.eval(c, tempMap);
 }
 
-inline double eval(const std::string& expression, std::map<std::string, int>& tempMap)
+inline double eval(const std::string& expression, std::map<std::string, int64_t>& tempMap)
 {
   return eval<double>(expression, tempMap);
 }
 
-inline double eval(char c, std::map<std::string, int>& tempMap)
+inline double eval(char c, std::map<std::string, int64_t>& tempMap)
 {
   return eval<double>(c, tempMap);
 }
 
 /*template <typename T>
-inline std::map<const std::string, int> setVariable(const std::string name, T value)
+inline std::map<const std::string, int64_t> setVariable(const std::string name, T value)
 {
   ExpressionParser<T> paFREDServerrser;
   return parser.setVariable(name, value);

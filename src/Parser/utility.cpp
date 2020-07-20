@@ -113,13 +113,13 @@ void Utility::printVector(const vector<int32_t> &data)
 
 double Utility::calculateEquation(string& equation, vector<string>& variables, vector<double>& values)
 {
-    map<string, int> varMap;
+    map<string, int64_t> varMap;
 
     for (size_t i = 0; i < values.size(); i++)
     {
         if (trunc(values[i]) == values[i])
         {
-            varMap[variables[i]] = int(values[i]);
+            varMap[variables[i]] = int64_t(values[i]);
         }
         else
         {
@@ -128,7 +128,7 @@ double Utility::calculateEquation(string& equation, vector<string>& variables, v
             {
                 equation.insert(pos + variables[i].size(), "/1000");
             }
-            varMap[variables[i]] = int(values[i] * 1000);
+            varMap[variables[i]] = int64_t(values[i] * 1000);
         }
     }
 
