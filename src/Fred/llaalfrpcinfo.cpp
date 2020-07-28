@@ -12,7 +12,7 @@ const void* LlaAlfRpcInfo::Execution(void* value)
     return value;
 }
 
-bool LlaAlfRpcInfo::requestLlaSession()
+bool LlaAlfRpcInfo::requestLlaSession(bool printError)
 {
     char* request = strdup(this->type == ALFRED_TYPES::LLA_TYPES::START ? this->Parent()->Name().c_str() : "");
     void* value = this->Send(request);
@@ -35,7 +35,10 @@ bool LlaAlfRpcInfo::requestLlaSession()
         return true;
     }
 
-    Print::PrintError(this->type == ALFRED_TYPES::LLA_TYPES::START ? "Cannot start LLA Session!" : "Cannot stop LLA Session!");
+    if (printError)
+    {
+        Print::PrintError(this->type == ALFRED_TYPES::LLA_TYPES::START ? "Cannot start LLA Session!" : "Cannot stop LLA Session!");
+    }
     return false;
 }
 

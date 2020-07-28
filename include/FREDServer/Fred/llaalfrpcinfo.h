@@ -12,7 +12,7 @@ class LlaAlfRpcInfo: public RpcInfoString
 {
 public:
     LlaAlfRpcInfo(string name, Fred* fred, ALFRED_TYPES::LLA_TYPES type);
-    bool requestLlaSession();
+    bool requestLlaSession(bool printError = false);
 
     const string& getName();
 

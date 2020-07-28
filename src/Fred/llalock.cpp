@@ -28,7 +28,7 @@ bool LlaLock::startLlaSession()
 
     do
     {
-        this->hasLlaSession = this->startLla->requestLlaSession();
+        this->hasLlaSession = this->startLla->requestLlaSession(attempt >= this->repeat - 1);
         if (this->hasLlaSession)
         {
             break;
@@ -53,7 +53,7 @@ bool LlaLock::stopLlaSession()
         return true;
     }
 
-    this->hasLlaSession = !this->stopLla->requestLlaSession();
+    this->hasLlaSession = !this->stopLla->requestLlaSession(true);
     return !this->hasLlaSession;
 }
 
