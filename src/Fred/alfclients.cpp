@@ -102,35 +102,35 @@ void AlfClients::registerCruAlf(Location::AlfEntry& entry)
     }
 }
 
-void AlfClients::registerLlaAlf(Location::AlfEntry& entry)
+void AlfClients::registerLlaAlf(LlaMapping::LlaEntry& entry)
 {
-    if (llaClients.count(entry.id) == 0)
+    if (llaClients.count(entry.alfEntry.id) == 0)
     {
-        llaClients[entry.id] = map<int32_t, LlaNodes>();
+        llaClients[entry.alfEntry.id] = map<int32_t, LlaNodes>();
     }
 
-    for (auto serial = entry.serials.begin(); serial != entry.serials.end(); serial++)
+    for (auto serial = entry.alfEntry.serials.begin(); serial != entry.alfEntry.serials.end(); serial++)
     {
-        if (llaClients[entry.id].count(serial->first) == 0)
+        if (llaClients[entry.alfEntry.id].count(serial->first) == 0)
         {
-            vector<Queue*> queues = this->getAlfCruQueues(entry.id, serial->first);
+            vector<Queue*> queues = this->getAlfCruQueues(entry.alfEntry.id, serial->first);
             if (queues.size())
             {
                 LlaNodes llaNodes;
-                llaNodes.llaStart = new LlaAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/LLA_SESSION_START", this->fred, ALFRED_TYPES::LLA_TYPES::START);
-                llaNodes.llaStop = new LlaAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/LLA_SESSION_STOP", this->fred, ALFRED_TYPES::LLA_TYPES::STOP);
+                llaNodes.llaStart = new LlaAlfRpcInfo(entry.alfEntry.id + "/SERIAL_" + to_string(serial->first) + "/LLA_SESSION_START", this->fred, ALFRED_TYPES::LLA_TYPES::START);
+                llaNodes.llaStop = new LlaAlfRpcInfo(entry.alfEntry.id + "/SERIAL_" + to_string(serial->first) + "/LLA_SESSION_STOP", this->fred, ALFRED_TYPES::LLA_TYPES::STOP);
 
                 this->fred->RegisterRpcInfo(llaNodes.llaStart);
                 this->fred->RegisterRpcInfo(llaNodes.llaStop);
 
-                llaNodes.llaLock = new LlaLock(entry.id, serial->first, queues, this->fred);
+                llaNodes.llaLock = new LlaLock(entry.alfEntry.id, serial->first, entry.repeat, entry.delay, queues, this->fred);
 
                 for (size_t i = 0; i < queues.size(); i++)
                 {
                     queues[i]->setLlaLock(llaNodes.llaLock);
                 }
 
-                llaClients[entry.id][serial->first] = llaNodes;
+                llaClients[entry.alfEntry.id][serial->first] = llaNodes;
             }
         }
     }

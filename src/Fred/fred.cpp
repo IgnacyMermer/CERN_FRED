@@ -6,6 +6,7 @@
 #include "Alfred/print.h"
 #include "Parser/parser.h"
 #include "Fred/Config/mapping.h"
+#include "Fred/Config/llamapping.h"
 #include "Fred/cruregistercommand.h"
 #include "Fred/Mapi/mapi.h"
 #include "Fred/Mapi/iterativemapi.h"
@@ -118,10 +119,10 @@ void Fred::generateAlfs()
             alfClients.registerCruAlf(cruAlf->second);
         }
 
-        map<string, Location::AlfEntry>& llaAlfs = cruSections[i].llaMapping.alfList();
+        vector<LlaMapping::LlaEntry>& llaAlfs = cruSections[i].llaMapping.alfList();
         for (auto llaAlf = llaAlfs.begin(); llaAlf != llaAlfs.end(); llaAlf++)
         {
-            alfClients.registerLlaAlf(llaAlf->second);
+            alfClients.registerLlaAlf(*llaAlf);
         }
     }
 }

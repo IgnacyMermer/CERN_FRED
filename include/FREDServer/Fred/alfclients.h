@@ -9,6 +9,7 @@
 #include "Fred/Config/instructions.h"
 #include "Fred/queue.h"
 #include "Alfred/rpcinfo.h"
+#include "Fred/Config/llamapping.h"
 
 using namespace std;
 
@@ -50,7 +51,7 @@ public:
     void registerAlf(Location::AlfEntry& entry);
     Nodes createAlfInfo(string id, int32_t serial, int32_t link);
     void registerCruAlf(Location::AlfEntry& entry);
-    void registerLlaAlf(Location::AlfEntry& entry);
+    void registerLlaAlf(LlaMapping::LlaEntry &entry);
 
     AlfRpcInfo* getAlfNode(string alf, int32_t serial, int32_t link, Instructions::Type type);
     Queue* getAlfQueue(string alf, int32_t serial, int32_t link);

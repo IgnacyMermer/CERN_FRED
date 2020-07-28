@@ -7,12 +7,20 @@ LlaMapping::LlaMapping(vector<string> data)
     {
         if (data[i].size())
         {
-            processLlaUnit(data[i]);
+            vector<string> path = Utility::splitString(data[i], "=");
+            if (path.size() == 1)
+            {
+                processLlaUnit(path[0]);
+            }
+            else if (path.size() == 2)
+            {
+                processLlaUnit(path[0], path[1]);
+            }
         }
     }
 }
 
-void LlaMapping::processLlaUnit(string& line)
+void LlaMapping::processLlaUnit(const string &line, const string &params)
 {
     vector<string> path = Utility::splitString(line, "/");
     if (path.size() == 2)
@@ -22,37 +30,58 @@ void LlaMapping::processLlaUnit(string& line)
 
         if (alfId.find("ALF") == 0)
         {
-            processLocation(alfId, serialId);
+            uint32_t repeat = 1;
+            uint32_t delay = 0;
+
+            if (params.size())
+            {
+                vector<double> llaParams = Utility::splitString2Num(params, ",");
+                if (llaParams.size() == 2)
+                {
+                    repeat = llaParams[0] >= 1 ? uint32_t(llaParams[0]) : 1;
+                    delay = llaParams[1] >= 0 ? uint32_t(llaParams[1]) : 0;
+                }
+            }
+
+            processLocation(alfId, serialId, repeat, delay);
         }
     }
 }
 
-void LlaMapping::processLocation(string alfId, int32_t serialId)
+void LlaMapping::processLocation(string alfId, int32_t serialId, uint32_t repeat, uint32_t delay)
 {
-    if (!alfs.count(alfId)) //new ALF
+    if (!checkIfEntryExists(alfId, serialId))
     {
         AlfEntry::SerialEntry serialEntry;
         serialEntry.id = serialId;
 
-        AlfEntry NewAlfEntry;
-        NewAlfEntry.id = alfId;
-        NewAlfEntry.serials[serialId] = serialEntry;
+        AlfEntry alfEntry;
+        alfEntry.id = alfId;
+        alfEntry.serials[serialId] = serialEntry;
 
-        alfs[alfId] = NewAlfEntry;
-    }
-    else //already existing ALF
-    {
-        if (!alfs[alfId].serials.count(serialId)) //new serial
-        {
-            AlfEntry::SerialEntry NewSerialEntry;
-            NewSerialEntry.id = serialId;
+        LlaEntry llaEntry;
+        llaEntry.alfEntry = alfEntry;
+        llaEntry.repeat = repeat;
+        llaEntry.delay = delay;
 
-            alfs[alfId].serials[serialId] = NewSerialEntry;
-        }
+        this->llaEntries.push_back(llaEntry);
     }
 }
 
-map<string, Location::AlfEntry>& LlaMapping::alfList()
+bool LlaMapping::checkIfEntryExists(const string& alfId, int32_t serial)
 {
-    return alfs;
+    for (size_t i = 0; i < this->llaEntries.size(); i++)
+    {
+        if (this->llaEntries[i].alfEntry.id == alfId && this->llaEntries[i].alfEntry.serials.count(serial))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+vector<LlaMapping::LlaEntry> &LlaMapping::alfList()
+{
+    return llaEntries;
 }
