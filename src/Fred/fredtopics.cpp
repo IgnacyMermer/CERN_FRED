@@ -19,9 +19,12 @@ void FredTopics::registerUnit(string section, Mapping::Unit& unit, Instructions 
 
         vector<MappedCommand*> unitCommands;
 
+        string unitName = unit.unitName;
+        unitName.replace(unitName.find(MAPPING_UNIT_DELIMITER), 1, to_string(unit.unitIds[uId]));
+
         for (auto topicName = instructions.getTopics().begin(); topicName != instructions.getTopics().end(); topicName++)
         {
-            string fullName = this->fred->Name() + "/" + section + "/" + unit.unitName + to_string(unit.unitIds[uId]) + "/" + *topicName;
+            string fullName = this->fred->Name() + "/" + section + "/" + unitName + "/" + *topicName;
 
             topics[fullName] = ChainTopic();
             topics[fullName].name = fullName;
@@ -55,10 +58,10 @@ void FredTopics::registerUnit(string section, Mapping::Unit& unit, Instructions 
 
         if (unitCommands.size())
         {
-            ServiceString* service = new ServiceString(this->fred->Name() + "/" + section + "/" + unit.unitName + to_string(unit.unitIds[uId]) + "/SELECT_ALF_ANS", this->fred);
+            ServiceString* service = new ServiceString(this->fred->Name() + "/" + section + "/" + unitName + "/SELECT_ALF_ANS", this->fred);
             service->Update("ALF");
             this->fred->RegisterService(service);
-            this->fred->RegisterCommand(new SelectCommand(this->fred->Name() + "/" + section + "/" + unit.unitName + to_string(unit.unitIds[uId]) + "/SELECT_ALF_REQ", this->fred, unitCommands, service));
+            this->fred->RegisterCommand(new SelectCommand(this->fred->Name() + "/" + section + "/" + unitName + "/SELECT_ALF_REQ", this->fred, unitCommands, service));
         }
     }
 }
@@ -72,7 +75,10 @@ void FredTopics::registerGroup(string section, Groups::Group& group)
 
     for (size_t i = 0; i < group.unitIds.size(); i++)
     {
-        ChainTopic* chainTopic = &topics[this->fred->Name() + "/" + section + "/" + group.unitName + to_string(group.unitIds[i]) + "/" + group.topicName];
+        string unitName = group.unitName;
+        unitName.replace(unitName.find(MAPPING_UNIT_DELIMITER), 1, to_string(group.unitIds[i]));
+
+        ChainTopic* chainTopic = &topics[this->fred->Name() + "/" + section + "/" + unitName + "/" + group.topicName];
         groupTopics[fullName].chainTopics.push_back(chainTopic);
     }
 

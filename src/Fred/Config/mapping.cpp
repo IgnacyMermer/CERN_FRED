@@ -19,10 +19,20 @@ void Mapping::processUnit(string& left, string& right)
 {
     Unit unit;
 
-    string name = left.substr(0, left.find("["));
+    size_t leftBr = left.find("[");
+    size_t rightBr = left.find("]");
+
+    if (leftBr == string::npos || rightBr == string::npos || rightBr <= leftBr)
+    {
+        throw new runtime_error("Unit IDs have to be specified in brackets");
+    }
+
+    string name = left.substr(0, leftBr) + MAPPING_UNIT_DELIMITER + left.substr(rightBr + 1);
+    string unitIds = left.substr(leftBr + 1, rightBr - leftBr - 1);
+
     unit.unitName = name;
 
-    vector<string> ids = Utility::splitString(left.substr(left.find("[") + 1, left.find("]") - left.find("[") - 1), ",");
+    vector<string> ids = Utility::splitString(unitIds, ",");
     for (size_t i = 0; i < ids.size(); i++)
     {
         if (ids[i] == "x") unit.unitIds.push_back(-1);

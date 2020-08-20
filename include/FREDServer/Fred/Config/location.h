@@ -5,6 +5,8 @@
 #include <vector>
 #include <map>
 
+#define MAPPING_UNIT_DELIMITER "\t"
+
 using namespace std;
 
 class Location

@@ -33,9 +33,18 @@ void Groups::processGroup(string& left, string& right, vector<string> &inVars)
 
     group.name = left;
 
-    string unitName = right.substr(0, right.find("["));
-    string topicName = right.substr(right.find("]/") + 2);
-    string inside = right.substr(right.find("[") + 1, right.find("]") - right.find("[") - 1);
+    size_t leftBr = right.find("[");
+    size_t rightBr = right.find("]");
+    size_t slash = right.find("/");
+
+    if (leftBr == string::npos || rightBr == string::npos || slash == string::npos || rightBr <= leftBr || slash <= rightBr)
+    {
+        throw new runtime_error("Unit IDs have to be specified in brackets");
+    }
+
+    string unitName = right.substr(0, leftBr) + MAPPING_UNIT_DELIMITER + right.substr(rightBr + 1, slash - rightBr - 1);
+    string inside = right.substr(leftBr + 1, rightBr - leftBr - 1);
+    string topicName = right.substr(slash + 1);
 
     group.unitName = unitName;
     group.topicName = topicName;
@@ -55,20 +64,27 @@ void Groups::processGroup(string& left, string& right, vector<string> &inVars)
 
 void Groups::calculateIds(Mapping& mapping, vector<string> masking)
 {
-    vector<int32_t> mask, allIds;
-    string fed;
+    map<string, vector<int32_t> > mask, allIds;
 
-    if (masking.size())
+    for (size_t m = 0; m < masking.size(); m++)
     {
-        string maskString = masking[0];
-        fed = maskString.substr(0, maskString.find("["));
-        maskString = maskString.substr(maskString.find("[") + 1, maskString.find("]") - maskString.find("[") - 1);
-        Utility::removeWhiteSpaces(maskString);
-        vector<string> textMask = Utility::splitString(maskString, ",");
+        size_t leftBr = masking[m].find("[");
+        size_t rightBr = masking[m].find("]");
+
+        if (leftBr == string::npos || rightBr == string::npos || rightBr <= leftBr)
+        {
+            throw new runtime_error("Mask IDs have to be specified in brackets");
+        }
+
+        string name = masking[m].substr(0, leftBr) + MAPPING_UNIT_DELIMITER + masking[m].substr(rightBr + 1);
+        string unitIds = masking[m].substr(leftBr + 1, rightBr - leftBr - 1);
+        Utility::removeWhiteSpaces(unitIds);
+
+        vector<string> textMask = Utility::splitString(unitIds, ",");
 
         for (size_t i = 0; i < textMask.size(); i++)
         {
-            mask.push_back(stoi(textMask[i]));
+            mask[name].push_back(stoi(textMask[i]));
         }
     }
 
@@ -131,12 +147,12 @@ void Groups::calculateIds(Mapping& mapping, vector<string> masking)
         for (size_t i = 0; i < textIds.size(); i++)
         {
             ids.push_back(stoi(textIds[i]));
-            allIds.push_back(stoi(textIds[i]));
+            allIds[groups[g].unitName].push_back(stoi(textIds[i]));
         }
 
         for (auto it = ids.begin(); it != ids.end(); it++)
         {
-            if (find(mask.begin(), mask.end(), *it) != mask.end())
+            if (find(mask[groups[g].unitName].begin(), mask[groups[g].unitName].end(), *it) != mask[groups[g].unitName].end())
             {
                 ids.erase(it--);
             }
@@ -147,17 +163,20 @@ void Groups::calculateIds(Mapping& mapping, vector<string> masking)
 
     for (auto it = mask.begin(); it != mask.end(); it++)
     {
-        Print::PrintWarning(fed + "[" + to_string(*it) + "] is masked!");
-
-        if (find(allIds.begin(), allIds.end(), *it) != allIds.end())
+        for (size_t idx = 0; idx < it->second.size(); idx++)
         {
-            mask.erase(it--);
-        }
-    }
+            string unitName = it->first;
+            unitName.replace(unitName.find(MAPPING_UNIT_DELIMITER), 1, to_string(it->second[idx]));
 
-    for (size_t i = 0; i < mask.size(); i++)
-    {
-        Print::PrintWarning(fed + " " + to_string(mask[i]) + " is masked but it is not in a group!");
+            if (find(allIds[it->first].begin(), allIds[it->first].end(), it->second[idx]) != allIds[it->first].end())
+            {
+                Print::PrintWarning(unitName + " is masked!");
+            }
+            else
+            {
+                Print::PrintWarning(unitName + " is masked but it is not in a group!");
+            }
+        }
     }
 }
 
