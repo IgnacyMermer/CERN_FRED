@@ -18,7 +18,12 @@ vector<string> IC::generateMessage(Instructions::Instruction& instructions, vect
         message += "\n";
 
     }
-    message.erase(message.size() - 1);
+    
+    if (message.size())
+    {
+        message.erase(message.size() - 1);
+        pollPattern.push_back("");
+    }
     return vector<string>({ message });
 }
 

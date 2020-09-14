@@ -1,6 +1,16 @@
 # FREDServer
 
 ## Version History
+* v2.1 - Adds new features:
+  - SCA: "n,wait" line instructs ALF to pause between SCA instructions, where n is an integer in milliseconds
+  - CRU_MAPPING block added to .section files. See: 'examples/CRU'. Adds:
+    - PATTERN_PLAYER service (for usage, see: [ALF Readme on GitHub](https://github.com/AliceO2Group/ALF#pattern_player))
+    - REGISTER_READ and REGISTER_WRITE services for those CRUs in config
+  - Indefinte MAPI (for usage, see [docs](https://espace.cern.ch/alicecontrols/ALICE%20DCS%20Wiki/ALFRED%20Wiki.aspx))
+  - OUT_VARS config is now list of OUT_VARs to publish in _ANS, with order respected
+    - 'EQUATION' keyword can be used in OUT_VARS for publishing result of an EQUATION
+  - CANALF support
+  - Various bugfixes, minor improvements, and updated examples
 * v2.0.1 - Updated examples, and other minor improvements
 * v2.0 - Moves compatibility to O2 ALF (from 'alisw-el7' repository/flp-suite Ansible install) - N.B. NOT backwards compatible
   - Existing 'section' files must be modified to reflect new ALF DIM server name (from ALFID to ALF_HOSTNAME)
