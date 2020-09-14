@@ -10,9 +10,8 @@
 
 int main(int argc, char** argv)
 {
-    bool parseOnly = Fred::commandLineArguments(argc, argv);
-	pair<string, string> config = Fred::readConfigFile();
-	Fred fred(parseOnly, config.first, config.second, "./sections");
+	bool parseOnly = Fred::commandLineArguments(argc, argv);
+	Fred fred(parseOnly, Fred::readConfigFile(), "./sections");
 
     //MapiExample mapiExample;
 	

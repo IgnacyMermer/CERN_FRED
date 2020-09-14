@@ -20,11 +20,27 @@ bool Fred::terminate = false;
 /*
  * Fred constructor
  */
-Fred::Fred(bool parseOnly, string fredName, string dnsName, string mainDirectory): ALFRED::ALFRED(fredName, dnsName, parseOnly), alfClients(this), fredTopics(this)
+Fred::Fred(bool parseOnly, map<string, string> config, string mainDirectory): ALFRED::ALFRED(config["NAME"], config["DNS"], parseOnly), alfClients(this), fredTopics(this)
 {
     signal(SIGINT, &termFred);
 
-    this->fredDns = dnsName;
+    this->fredDns = config["DNS"];
+    this->databaseInterface = NULL;
+
+    if (config["DB_CONN"] != "" && config["DB_USER"] != "" && config["DB_PASS"] != "")
+    {
+        Print::PrintInfo("Connecting to database " + config["DB_USER"] + ".");
+        this->databaseInterface = new DatabaseInterface(config["DB_USER"], config["DB_PASS"], config["DB_CONN"]);
+
+        if (this->databaseInterface->connect())
+        {
+            Print::PrintInfo("Successfully connected to " + config["DB_USER"] + ".");
+        }
+        else
+        {
+            Print::PrintError("Cannot connect to " + config["DB_USER"] + "!");
+        }
+    }
 
     Print::PrintInfo("Parsing started.");
     try //parsing
@@ -60,28 +76,36 @@ Fred::Fred(bool parseOnly, string fredName, string dnsName, string mainDirectory
     Print::PrintInfo("FRED running.");
 }
 
+Fred::~Fred()
+{
+    if (this->databaseInterface)
+    {
+        delete this->databaseInterface;
+    }
+}
+
 /*
- * Read FRED name and DIM DNS from fred.conf
+ * Read FRED name, DIM DNS and DB config from fred.conf
  */
-pair<string, string> Fred::readConfigFile()
+map<string, string> Fred::readConfigFile()
 {
     try
     {
         vector<string> lines = Parser::readFile("fred.conf", "./config");
 
-        string name, dns;
+        map<string, string> config = { { "NAME", "" }, { "DNS", "" }, { "DB_CONN", "" }, { "DB_USER", "" }, { "DB_PASS", "" } };
+
         for (size_t i = 0; i < lines.size(); i++)
         {
             string left = lines[i].substr(0, lines[i].find("="));
             string right = lines[i].substr(lines[i].find("=") + 1);
 
-            if (left == "NAME") name = right;
-            else if (left == "DNS") dns = right;
+            config[left] = right;
         }
 
-        if (name != "" && dns != "")
+        if (config["NAME"] != "" && config["DNS"] != "")
         {
-            return make_pair(name, dns);
+            return config;
         }
     }
     catch (exception& e)
