@@ -20,10 +20,11 @@ const string ProcessMessage::FAILURE = "failure";
 /*
  * ProcessMessage constructor for regular topics 
  */
-ProcessMessage::ProcessMessage(string message, int32_t placeId)
+ProcessMessage::ProcessMessage(string message, int32_t placeId, bool useCru)
 {
     groupCommand = NULL;
     mapi = NULL;
+    this->useCru = useCru;
     correct = checkMessage(message);
     if (correct)
     {
@@ -40,12 +41,12 @@ ProcessMessage::ProcessMessage(string message, int32_t placeId)
         size_t inSize = input.size();
         if (inSize)
         {
-            for (size_t i = 0; i < inSize; i++) input[i].insert(input[i].begin(), uint32_t(placeId));
+            for (size_t i = 0; i < inSize; i++) input[i].insert(input[i].begin(), double(placeId));
         }
         else
         {
-            input.push_back(vector<uint32_t>());
-            input[0].push_back(uint32_t(placeId));
+            input.push_back(vector<double>());
+            input[0].push_back(double(placeId));
         }
     }
     else
@@ -58,11 +59,12 @@ ProcessMessage::ProcessMessage(string message, int32_t placeId)
 /*
  * ProcessMessage constructor for group topics 
  */
-ProcessMessage::ProcessMessage(map<string, vector<uint32_t> > inVars, int32_t placeId, GroupCommand* groupCommand)
+ProcessMessage::ProcessMessage(map<string, vector<double> > inVars, int32_t placeId, GroupCommand* groupCommand, bool useCru)
 {
     this->groupCommand = groupCommand;
     mapi = NULL;
     correct = true;
+    this->useCru = useCru;
 
     size_t varSize = inVars.size();
     if (varSize > 0)
@@ -87,29 +89,30 @@ ProcessMessage::ProcessMessage(map<string, vector<uint32_t> > inVars, int32_t pl
     size_t inSize = input.size();
     if (inSize)
     {
-        for (size_t i = 0; i < inSize; i++) input[i].insert(input[i].begin(), uint32_t(placeId));
+        for (size_t i = 0; i < inSize; i++) input[i].insert(input[i].begin(), double(placeId));
     }
     else
     {
-        input.push_back(vector<uint32_t>());
-        input[0].push_back(uint32_t(placeId));
+        input.push_back(vector<double>());
+        input[0].push_back(double(placeId));
     }
 }
 
 /*
  * ProcessMessage constructor for MAPI topics 
  */
-ProcessMessage::ProcessMessage(Mapi* mapi, string input)
+ProcessMessage::ProcessMessage(Mapi* mapi, string input, bool useCru)
 {
     this->mapi = mapi;
     this->fullMessage = input;
+    this->useCru = useCru;
 }
 
 bool ProcessMessage::checkMessage(string& message)
 {
     for (size_t i = 0; i < message.size(); i++)
     {
-        if (!(isxdigit(message[i])  || message[i] == ',' || message[i] == '\n' || message[i] == 'x'))
+        if (!(isxdigit(message[i])  || message[i] == ',' || message[i] == '\n' || message[i] == 'x' || message[i] == '.'))
         {
             return false;
         }
@@ -128,24 +131,42 @@ bool ProcessMessage::isCorrect()
     return correct;
 }
 
-string ProcessMessage::generateFullMessage(Instructions::Instruction& instructions)
+vector<string> ProcessMessage::generateFullMessage(Instructions::Instruction& instructions)
 {
     outputPattern.clear(); //clear outvar name vector
+    pollPattern.clear();
+
+    vector<string> fullMessage;
+
     try
     {
         switch (instructions.type)
         {
-            case Instructions::Type::SWT: fullMessage = SWT::generateMessage(instructions, outputPattern, this);
+            case Instructions::Type::SWT: fullMessage = SWT::generateMessage(instructions, outputPattern, pollPattern, this);
                 break;
-            case Instructions::Type::SCA: fullMessage = SCA::generateMessage(instructions, outputPattern, this);
+            case Instructions::Type::SCA: fullMessage = SCA::generateMessage(instructions, outputPattern, pollPattern, this);
                 break;
-            case Instructions::Type::IC: fullMessage = IC::generateMessage(instructions, outputPattern, this);
+            case Instructions::Type::IC: fullMessage = IC::generateMessage(instructions, outputPattern, pollPattern, this);
                 break;
         }
     }
     catch (exception& e)
     {
         throw runtime_error(e.what());
+    }
+
+    this->fullMessage.clear();
+    for (size_t i = 0; i < fullMessage.size(); i++)
+    {
+        if (pollPattern[i].empty())
+        {
+            this->fullMessage += fullMessage[i] + "\n";
+        }
+    }
+
+    if (!this->fullMessage.empty())
+    {
+        this->fullMessage.erase(this->fullMessage.size() - 1);
     }
 
     return fullMessage;
@@ -198,41 +219,37 @@ vector<vector<unsigned long> > ProcessMessage::readbackValues(const string& mess
 vector<double> ProcessMessage::calculateReadbackResult(vector<vector<unsigned long> >& result, Instructions::Instruction& instructions)
 {
     vector<double> resultValues;
-    vector<string>& outVars = instructions.outVar;
+    vector<string>& vars = instructions.vars;
 
     for (size_t m = 0; m < getMultiplicity(); m++)
     {
-        vector<uint32_t> received;
-        for (size_t v = 0; v < outVars.size(); v++) received.push_back(result[v][m]);
+        vector<double> received;
+        for (size_t v = 0; v < vars.size(); v++) received.push_back(result[v][m]);
 
-        resultValues.push_back(Utility::calculateEquation(instructions.equation, outVars, received));
+        resultValues.push_back(Utility::calculateEquation(instructions.equation, vars, received)); // mapped one to one
     }
 
     return resultValues;
 }
 
-string ProcessMessage::valuesToString(vector<vector<unsigned long> > values, int32_t multiplicity, Instructions::Type type)
+/*
+ * Get the width of the return value depending on the protocol used
+ */
+uint32_t ProcessMessage::getReturnWidth(Instructions::Type type)
 {
-    string response;
+    uint32_t width;
  
-    try
+    switch (type)
     {
-        switch (type)
-        {
-            case Instructions::Type::SWT: response = SWT::valuesToString(values, multiplicity);
-                break;
-            case Instructions::Type::SCA: response = SCA::valuesToString(values, multiplicity);
-                break;
-            case Instructions::Type::IC: response = IC::valuesToString(values, multiplicity);
-                break;
-        }
-    }
-    catch (exception& e)
-    {
-        throw runtime_error(e.what());
+        case Instructions::Type::SWT: width = SWT::getReturnWidth();
+            break;
+        case Instructions::Type::SCA: width = SCA::getReturnWidth();
+            break;
+        case Instructions::Type::IC: width = IC::getReturnWidth();
+            break;
     }
 
-    return response;
+    return width;
 }
 
 /*
@@ -244,8 +261,8 @@ void ProcessMessage::updateResponse(ChainTopic& chainTopic, string response, boo
     {
         if (groupCommand == NULL)
         {
-            chainTopic.error->Update(response.c_str());
-            PrintError(chainTopic.name, "Updating error service!");
+            chainTopic.error->Update(response);
+            Print::PrintError(chainTopic.name, "Updating error service!");
         }
         else groupCommand->receivedResponse(&chainTopic, response, true);
     }
@@ -253,11 +270,25 @@ void ProcessMessage::updateResponse(ChainTopic& chainTopic, string response, boo
     {
         if (groupCommand == NULL)
         {
-            chainTopic.service->Update(response.c_str());
-            PrintVerbose(chainTopic.name, "Updating service");
+            chainTopic.service->Update(response);
+            Print::PrintVerbose(chainTopic.name, "Updating service");
         }
         else groupCommand->receivedResponse(&chainTopic, response, false);        
     }
+}
+
+bool ProcessMessage::checkLink(string message, ChainTopic& chainTopic)
+{
+    if (message == "NO RPC LINK!")
+    {
+        string response = (this->getUseCru() ? chainTopic.unit->alfs.first.alfId : chainTopic.unit->alfs.second.alfId) + " is not responding!";
+        Print::PrintError(chainTopic.name, response);
+
+        updateResponse(chainTopic, response, true);
+        return false;
+    }
+
+    return true;
 }
 
 void ProcessMessage::evaluateMessage(string message, ChainTopic &chainTopic, bool ignoreStatus)
@@ -267,25 +298,15 @@ void ProcessMessage::evaluateMessage(string message, ChainTopic &chainTopic, boo
         //if (!ignoreStatus) //ignoreStatus is true only for alfinfo (not the usual alfrpcinfo), so for SUBSCRIBE only
         //{
             string response;
-            if (message == "NO RPC LINK!")
+            if (message.find(SUCCESS) != string::npos) //SUCCESS
             {
-                response = "ALF_" + chainTopic.unit->alfId + " is not responding!";
-                PrintError(chainTopic.name, response);
-                
-                updateResponse(chainTopic, response, true);
-                return;
-            }
-            else if (message.find(SUCCESS) != string::npos) //SUCCESS
-            {
-                vector<vector<unsigned long> > values;
                 try
                 {
                     Utility::checkMessageIntegrity(this->fullMessage, message.substr(SUCCESS.length() + 1), chainTopic.instruction->type); //check message integrity
-                    values = readbackValues(message.substr(SUCCESS.length() + 1), *chainTopic.instruction); //extract eventual outvars
                 }
                 catch (exception& e)
                 {
-                    PrintError(chainTopic.name, e.what());
+                    Print::PrintError(chainTopic.name, e.what());
                     response = e.what();
                     replace(message.begin(), message.end(), '\n', ';');
                     response += ";" + message;
@@ -293,45 +314,72 @@ void ProcessMessage::evaluateMessage(string message, ChainTopic &chainTopic, boo
                     updateResponse(chainTopic, response, true);
                     return;
                 }
-                if (values.empty())
+
+                if (chainTopic.instruction->outVars.empty()) //No OUT_VARs
                 {
                     response = "OK"; //FRED ACK response
 
                     updateResponse(chainTopic, response, false);
                     return;
                 }
+                
+                //OUT_VARs to be published
+                vector<vector<unsigned long> > values;
+                values = readbackValues(message.substr(SUCCESS.length() + 1), *chainTopic.instruction); //extract VARs
 
-                if (chainTopic.instruction->equation != "")
+                vector<double> equationResults;
+                if (chainTopic.instruction->equation != "") //EQUATION
                 {
-                    vector<double> realValues = calculateReadbackResult(values, *chainTopic.instruction);
-                    response = Utility::readbackToString(realValues);
-                }
-                else
-                {
-                    response = valuesToString(values, getMultiplicity(), chainTopic.instruction->type);
+                    equationResults = calculateReadbackResult(values, *chainTopic.instruction);
                 }
 
+                vector<string>& outVars = chainTopic.instruction->outVars;
+                vector<string>& vars = chainTopic.instruction->vars;
+
+                //Order values and equation results as expressed by the OUT_VARs
+                stringstream ss;
+
+                for (int32_t m = 0; m < getMultiplicity(); m++)
+                {
+                    for (size_t i = 0; i < outVars.size(); i++)
+                    {
+                        if (outVars[i] == "EQUATION") //EQUATION keyword for returining the result of the equation
+                        {
+                            ss << equationResults[m];
+                        }
+                        else
+                        {
+                            size_t id = distance(vars.begin(), find(vars.begin(), vars.end(), outVars[i]));
+                            ss << "0x" << setw(getReturnWidth(chainTopic.instruction->type)) << setfill('0') << hex << values[id][m];
+                        }
+                        if (i < outVars.size() - 1) ss << ",";
+                    }
+                    if (m < getMultiplicity() - 1) ss << "\n";
+                }
+
+                response = ss.str();               
                 updateResponse(chainTopic, response, false);
                 return;
+                
             }
-            else if (!(message.find(SUCCESS) != string::npos)) //not a SUCCESS
+            else //not a SUCCESS
             {
                 string response;
 
                 if (message.empty()) //empty message
                 {
                     response = "Empty response received!";
-                    PrintError(chainTopic.name, response);
+                    Print::PrintError(chainTopic.name, response);
                 }
                 else if (message.find(FAILURE) != string::npos) //FAILURE message
                 {
-                    PrintError(chainTopic.name, "Error message received:\n" + message + "\n");
+                    Print::PrintError(chainTopic.name, "Error message received:\n" + message + "\n");
                     replace(message.begin(), message.end(), '\n', ';');
                     response = message;
                 }
                 else //unknown message
                 {
-                    PrintError(chainTopic.name, "Unknown message received:\n" + message + "\n");
+                    Print::PrintError(chainTopic.name, "Unknown message received:\n" + message + "\n");
                     replace(message.begin(), message.end(), '\n', ';');
                     response = message;
                 }
@@ -350,7 +398,7 @@ void ProcessMessage::evaluateMessage(string message, ChainTopic &chainTopic, boo
         //    }
         //    catch (exception& e)
         //    {
-        //        PrintError(chainTopic.name, e.what());
+        //        Print::PrintError(chainTopic.name, e.what());
         //        response = e.what();
         //        replace(message.begin(), message.end(), '\n', ';');
         //        response += ";" + message;
@@ -384,37 +432,53 @@ void ProcessMessage::evaluateMessage(string message, ChainTopic &chainTopic, boo
     catch (exception& e)
     {
         string response = "Error in message evaluation! Incorrect data received!";
-        PrintError(chainTopic.name, response);
+        Print::PrintError(chainTopic.name, response);
         updateResponse(chainTopic, response, true);
     }
 }
 
 string ProcessMessage::generateMapiMessage()
 {
+    this->pollPattern.clear();
+    this->pollPattern.push_back("");
     return mapi->processInputMessage(this->fullMessage);
 }
 
 void ProcessMessage::evaluateMapiMessage(string message, ChainTopic& chainTopic)
 {
     string response = mapi->processOutputMessage(message);
+    if (mapi->customMessageProcess())
+    {
+        return;
+    }
 
     if (!mapi->noReturn)
     {
         if (mapi->returnError)
         {
-            chainTopic.error->Update(response.c_str());
-            PrintError(chainTopic.name, "Updating MAPI error service!");
+            chainTopic.error->Update(response);
+            Print::PrintError(chainTopic.name, "Updating MAPI error service!");
             mapi->returnError = false; //reset returnError
         }
         else
         {
-            chainTopic.service->Update(response.c_str());
-            PrintVerbose(chainTopic.name, "Updating MAPI service");
+            chainTopic.service->Update(response);
+            Print::PrintVerbose(chainTopic.name, "Updating MAPI service");
         }
     }
     else
     {
-        PrintVerbose(chainTopic.name, "Mapi is noReturn");
+        Print::PrintVerbose(chainTopic.name, "Mapi is noReturn");
         mapi->noReturn = false; //reset noReturn
     }
+}
+
+vector<string>* ProcessMessage::getPollPattern()
+{
+    return &this->pollPattern;
+}
+
+bool ProcessMessage::getUseCru()
+{
+    return useCru;
 }

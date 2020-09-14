@@ -5,20 +5,19 @@
 #include <stdio.h>
 #include <fstream>
 #include "Fred/fred.h"
-#include "Fred/global.h"
 #include "Alfred/print.h"
 //#include "Mapi/mapiexample.h"
 
 int main(int argc, char** argv)
 {
-	parseOnly = Fred::commandLineArguments(argc, argv);
+	bool parseOnly = Fred::commandLineArguments(argc, argv);
 	Fred fred(parseOnly, Fred::readConfigFile(), "./sections");
 
-	//MapiExample mapiExample;
+    //MapiExample mapiExample;
 	
 	try
 	{
-		//fred.registerMapiObject("FRED1/MAPI_EXAMPLE/LOOP0/TEST", &mapiExample);
+        //fred.registerMapiObject("FRED1/MAPI_EXAMPLE/LOOP0/TEST", &mapiExample);
 	}
 	catch (exception& e)
 	{

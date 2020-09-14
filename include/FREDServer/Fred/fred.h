@@ -13,12 +13,13 @@
 class Fred: public ALFRED
 {
 private:
-    static void terminate(int);
+    static void termFred(int);
+    static bool terminate;
     void generateAlfs();
     void generateTopics();
     void checkAlfs();
 
-    vector<Section> sections;
+    vector<Section> sections, cruSections;
     AlfClients alfClients;
     FredTopics fredTopics;
 
@@ -30,6 +31,7 @@ public:
     ~Fred();
     static map<string, string> readConfigFile();
     static bool commandLineArguments(int argc, char** argv);
+    static void printHelp();
 
     AlfClients &getAlfClients();
     FredTopics &getFredTopics();
@@ -37,6 +39,7 @@ public:
     string getFredDns();
 
     void registerMapiObject(string topic, Mapi* mapi);
+    void Start();
 };
 
 #endif // FRED_H

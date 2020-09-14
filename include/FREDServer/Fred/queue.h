@@ -13,14 +13,20 @@
 using namespace std;
 
 class Fred;
+class LlaLock;
 
 class Queue
 {
 public:
-    Queue(string alfId, Fred* fred);
+    Queue(string alfId, int32_t serial, int32_t link, Fred* fred);
     ~Queue();
 
     void newRequest(pair<ProcessMessage *, ChainTopic *> request);
+
+    size_t getStackSize();
+    void setLlaLock(LlaLock* llaLock);
+    LlaLock* getLlaLock();
+    bool processing();
 
 private:
     string id;
@@ -30,8 +36,11 @@ private:
     atomic<bool> isFinished, isProcessing;
     list<pair<ProcessMessage *, ChainTopic*> > stack;
     mutex stackMutex;
+    LlaLock* llaLock;
 
     static void clearQueue(Queue* queue);
+    bool checkLlaStartSession();
+    void checkLlaStopSession();
 };
 
 #endif // QUEUE_H

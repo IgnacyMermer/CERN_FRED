@@ -1,7 +1,9 @@
 #include "Fred/alfclients.h"
 #include "Fred/alfrpcinfo.h"
 #include "Fred/crualfrpcinfo.h"
+#include "Fred/llaalfrpcinfo.h"
 #include "Fred/fred.h"
+#include "Fred/llalock.h"
 
 AlfClients::AlfClients(Fred *fred)
 {
@@ -10,9 +12,23 @@ AlfClients::AlfClients(Fred *fred)
 
 AlfClients::~AlfClients()
 {
-    for (auto it = queues.begin(); it != queues.end(); it++)
+    for (auto alf = clients.begin(); alf != clients.end(); alf++)
     {
-        delete it->second;
+        for (auto serial = alf->second.begin(); serial != alf->second.end(); serial++)
+        {
+            for (auto link = serial->second.begin(); link != serial->second.end(); link++)
+            {
+                delete link->second.queue;
+            }
+        }
+    }
+
+    for (auto llaAlf = llaClients.begin(); llaAlf != llaClients.end(); llaAlf++)
+    {
+        for (auto serial = llaAlf->second.begin(); serial != llaAlf->second.end(); serial++)
+        {
+            delete serial->second.llaLock;
+        }
     }
 }
 
@@ -21,8 +37,6 @@ void AlfClients::registerAlf(Location::AlfEntry &entry)
     if (clients.count(entry.id) == 0)
     {
         clients[entry.id] = map<int32_t, map<int32_t, Nodes> >();
-        queues[entry.id] = new Queue(entry.id, this->fred);
-        //dns[entry.id] = entry.dns;
     }
 
     for (auto serial = entry.serials.begin(); serial != entry.serials.end(); serial++)
@@ -30,15 +44,13 @@ void AlfClients::registerAlf(Location::AlfEntry &entry)
         if (clients[entry.id].count(serial->first) == 0)
         {
             clients[entry.id][serial->first] = map<int32_t, Nodes>();
-
-            this->fred->RegisterRpcInfo(new CruAlfRpcInfo("ALF_" + entry.id + "/SERIAL_" + to_string(serial->first) + "/LINK_0/REGISTER_WRITE", this->fred, CruAlfRpcInfo::WRITE));
-            this->fred->RegisterRpcInfo(new CruAlfRpcInfo("ALF_" + entry.id + "/SERIAL_" + to_string(serial->first) + "/LINK_0/REGISTER_READ", this->fred, CruAlfRpcInfo::READ));
         }
 
         for (size_t link = 0; link < serial->second.links.size(); link++)
         {
             if (clients[entry.id][serial->first].count(serial->second.links[link]) == 0)
             {
+                //cout << entry.id << " " << serial->first << " " << serial->second.links[link] << "\n";
                 clients[entry.id][serial->first][serial->second.links[link]] = createAlfInfo(entry.id, serial->first, serial->second.links[link]);
             }
         }
@@ -47,25 +59,81 @@ void AlfClients::registerAlf(Location::AlfEntry &entry)
 
 AlfClients::Nodes AlfClients::createAlfInfo(string id, int32_t serial, int32_t link)
 {
-    //multiple DNS is deprecated
-    //setenv("DIM_DNS_NODE", dns.c_str(), 1);
+    Nodes nodes = { .sca = NULL, .swt = NULL, .ic = NULL, .queue = NULL };
 
-    Nodes nodes;
-
-    nodes.sca = new AlfRpcInfo("ALF_" + id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/SCA_SEQUENCE", " ", this->fred);
-    this->fred->RegisterRpcInfo(nodes.sca);
-    nodes.swt = new AlfRpcInfo("ALF_" + id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/SWT_SEQUENCE", " ", this->fred);
+    nodes.swt = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/SWT_SEQUENCE", " ", this->fred);
     this->fred->RegisterRpcInfo(nodes.swt);
-    nodes.ic = new AlfRpcInfo("ALF_" + id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/IC_SEQUENCE", " ", this->fred);
-    this->fred->RegisterRpcInfo(nodes.ic);
 
-    //this->fred->RegisterRpcInfo("ALF_" + id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/PUBLISH_SCA_SEQUENCE_START", " ",  DIM_TYPE::STRING);
-    //this->fred->RegisterRpcInfo("ALF_" + id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/PUBLISH_SCA_SEQUENCE_STOP", " ", DIM_TYPE::STRING);
-    //this->fred->RegisterRpcInfo("ALF_" + id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/PUBLISH_SWT_SEQUENCE_START", " ", DIM_TYPE::STRING);
-    //this->fred->RegisterRpcInfo("ALF_" + id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/PUBLISH_SWT_SEQUENCE_STOP", " ", DIM_TYPE::STRING);
-    //this->fred->RegisterRpcInfo("ALF_" + id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/PUBLISH_IC_SEQUENCE_START", " ", DIM_TYPE::STRING);
-    //this->fred->RegisterRpcInfo("ALF_" + id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/PUBLISH_IC_SEQUENCE_STOP", " ", DIM_TYPE::STRING);
+    if (id.find("ALF") == 0)
+    {
+        nodes.sca = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/SCA_SEQUENCE", " ", this->fred);
+        this->fred->RegisterRpcInfo(nodes.sca);
+        nodes.ic = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/IC_SEQUENCE", " ", this->fred);
+        this->fred->RegisterRpcInfo(nodes.ic);
+    }
+
+    nodes.queue = new Queue(id, serial, link, this->fred);
+
     return nodes;
+}
+
+void AlfClients::registerCruAlf(Location::AlfEntry& entry)
+{
+    if (cruClients.count(entry.id) == 0)
+    {
+        cruClients[entry.id] = map<int32_t, CruNodes>();
+    }
+
+    for (auto serial = entry.serials.begin(); serial != entry.serials.end(); serial++)
+    {
+        if (cruClients[entry.id].count(serial->first) == 0)
+        {
+            CruNodes cruNodes;
+            cruNodes.registerWrite = new CruAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/REGISTER_WRITE", this->fred, ALFRED_TYPES::CRU_TYPES::WRITE);
+            cruNodes.registerRead = new CruAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/REGISTER_READ", this->fred, ALFRED_TYPES::CRU_TYPES::READ);
+            cruNodes.patternPlayer = new CruAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/PATTERN_PLAYER", this->fred, ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER);
+
+            this->fred->RegisterRpcInfo(cruNodes.registerWrite);
+            this->fred->RegisterRpcInfo(cruNodes.registerRead);
+            this->fred->RegisterRpcInfo(cruNodes.patternPlayer);
+
+            cruClients[entry.id][serial->first] = cruNodes;
+        }
+    }
+}
+
+void AlfClients::registerLlaAlf(LlaMapping::LlaEntry& entry)
+{
+    if (llaClients.count(entry.alfEntry.id) == 0)
+    {
+        llaClients[entry.alfEntry.id] = map<int32_t, LlaNodes>();
+    }
+
+    for (auto serial = entry.alfEntry.serials.begin(); serial != entry.alfEntry.serials.end(); serial++)
+    {
+        if (llaClients[entry.alfEntry.id].count(serial->first) == 0)
+        {
+            vector<Queue*> queues = this->getAlfCruQueues(entry.alfEntry.id, serial->first);
+            if (queues.size())
+            {
+                LlaNodes llaNodes;
+                llaNodes.llaStart = new LlaAlfRpcInfo(entry.alfEntry.id + "/SERIAL_" + to_string(serial->first) + "/LLA_SESSION_START", this->fred, ALFRED_TYPES::LLA_TYPES::START);
+                llaNodes.llaStop = new LlaAlfRpcInfo(entry.alfEntry.id + "/SERIAL_" + to_string(serial->first) + "/LLA_SESSION_STOP", this->fred, ALFRED_TYPES::LLA_TYPES::STOP);
+
+                this->fred->RegisterRpcInfo(llaNodes.llaStart);
+                this->fred->RegisterRpcInfo(llaNodes.llaStop);
+
+                llaNodes.llaLock = new LlaLock(entry.alfEntry.id, serial->first, entry.repeat, entry.delay, queues, this->fred);
+
+                for (size_t i = 0; i < queues.size(); i++)
+                {
+                    queues[i]->setLlaLock(llaNodes.llaLock);
+                }
+
+                llaClients[entry.alfEntry.id][serial->first] = llaNodes;
+            }
+        }
+    }
 }
 
 AlfRpcInfo* AlfClients::getAlfNode(string alf, int32_t serial, int32_t link, Instructions::Type type)
@@ -85,44 +153,75 @@ AlfRpcInfo* AlfClients::getAlfNode(string alf, int32_t serial, int32_t link, Ins
     return NULL;
 }
 
-//RpcInfoString* AlfClients::getAlfNode(string alf, int32_t serial, int32_t link, Instructions::Type type, bool start)
-//{
-//    switch (type)
-//    {
-//        case Instructions::Type::SCA:
-//            return (RpcInfoString*)this->fred->GetRpcInfo("ALF_" + alf + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + (start ? "/PUBLISH_SCA_SEQUENCE_START" : "/PUBLISH_SCA_SEQUENCE_STOP"));
-
-//        case Instructions::Type::SWT:
-//            return (RpcInfoString*)this->fred->GetRpcInfo("ALF_" + alf + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + (start ? "/PUBLISH_SWT_SEQUENCE_START" : "/PUBLISH_SWT_SEQUENCE_STOP"));
-      
-//        case Instructions::Type::IC:
-//            return (RpcInfoString*)this->fred->GetRpcInfo("ALF_" + alf + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + (start ? "/PUBLISH_IC_SEQUENCE_START" : "/PUBLISH_IC_SEQUENCE_STOP"));
-//    }
-
-//    return NULL;
-//}
-
-Queue* AlfClients::getAlfQueue(string alf)
+Queue* AlfClients::getAlfQueue(string alf, int32_t serial, int32_t link)
 {
-    return queues[alf];
+    return clients[alf][serial][link].queue;
 }
 
-/*string AlfClients::getAlfDns(int32_t alf)
+vector<Queue*> AlfClients::getAlfCruQueues(string alf, int32_t serial)
 {
-    return dns[alf];
-}*/
+    vector<Queue*> queues;
 
-string AlfClients::getAlfSubscribeTopic(string alf, int32_t serial, int32_t link, Instructions::Type type, string name)
-{
-    switch (type)
+    if (clients.count(alf))
     {
-        case Instructions::Type::SCA:
-            return "ALF_" + alf + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/PUBLISH_SCA_SEQUENCE/" + name;
-        case Instructions::Type::SWT:
-            return "ALF_" + alf + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/PUBLISH_SWT_SEQUENCE/" + name;
-        case Instructions::Type::IC:
-            return "ALF_" + alf + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link) + "/PUBLISH_IC_SEQUENCE/" + name;
+        if (clients[alf].count(serial))
+        {
+            for (auto link = clients[alf][serial].begin(); link != clients[alf][serial].end(); link++)
+            {
+                queues.push_back(link->second.queue);
+            }
+        }
     }
 
-    return "";
+    return queues;
+}
+
+CruAlfRpcInfo* AlfClients::getCruAlfNode(string alf, int32_t serial, ALFRED_TYPES::CRU_TYPES type)
+{
+    CruNodes& nodes = cruClients[alf][serial];
+
+    switch (type)
+    {
+    case ALFRED_TYPES::CRU_TYPES::WRITE:
+        return nodes.registerWrite;
+    case ALFRED_TYPES::CRU_TYPES::READ:
+        return nodes.registerRead;
+    case ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER:
+        return nodes.patternPlayer;
+    }
+
+    return NULL;
+}
+
+vector<CruAlfRpcInfo*> AlfClients::getAllCruRpcs()
+{
+    vector<CruAlfRpcInfo*> rpcInfos;
+
+    for (auto alf = this->cruClients.begin(); alf != this->cruClients.end(); alf++)
+    {
+        for (auto serial = alf->second.begin(); serial != alf->second.end(); serial++)
+        {
+            rpcInfos.push_back(serial->second.registerWrite);
+            rpcInfos.push_back(serial->second.registerRead);
+            rpcInfos.push_back(serial->second.patternPlayer);
+        }
+    }
+
+    return rpcInfos;
+}
+
+vector<LlaAlfRpcInfo*> AlfClients::getAllLlaRpcs()
+{
+    vector<LlaAlfRpcInfo*> rpcInfos;
+
+    for (auto alf = this->llaClients.begin(); alf != this->llaClients.end(); alf++)
+    {
+        for (auto serial = alf->second.begin(); serial != alf->second.end(); serial++)
+        {
+            rpcInfos.push_back(serial->second.llaStart);
+            rpcInfos.push_back(serial->second.llaStop);
+        }
+    }
+
+    return rpcInfos;
 }

@@ -4,14 +4,14 @@ namespace calculator
 {
 
 template<typename T>
-T ExpressionParser<T>::eval(const std::string& expr, std::map<std::string, int>& tempMap)
+T ExpressionParser<T>::eval(const std::string& expr, std::map<std::string, int64_t>& tempMap)
 {
     T result = 0;
     index_ = 0;
     if(!tempMap.empty())
         vars_ = tempMap;
     expr_ = expr;
-    insertVars();//put variables into equation
+    insertVars();//put variables int64_to equation
     try
     {
       result = parseExpr();
@@ -28,7 +28,7 @@ T ExpressionParser<T>::eval(const std::string& expr, std::map<std::string, int>&
 }
 
 template<typename T>
-T ExpressionParser<T>::eval(char c, std::map<std::string, int>& tempMap)
+T ExpressionParser<T>::eval(char c, std::map<std::string, int64_t>& tempMap)
 {
   std::string expr(1, c);
   return eval(expr, tempMap);
@@ -41,7 +41,7 @@ T ExpressionParser<T>::pow(T x, T n)
 
   while (n > 0)
   {
-    if ((int)n % 2 != 0)
+    if ((int64_t)n % 2 != 0)
     {
       res *= x;
       n -= 1;
@@ -79,21 +79,21 @@ T ExpressionParser<T>::calculate(T v1, T v2, const Operator& op, T cond) const
   switch (op.op)
   {
     case OPERATOR_TERNARY_Q:      return (!!cond)*v1 + (!cond)*v2;
-    case OPERATOR_BITWISE_OR:     return (int)v1 | (int)v2;
-    case OPERATOR_BITWISE_XOR:    return (int)v1 ^ (int)v2;
-    case OPERATOR_BITWISE_AND:    return (int)v1 & (int)v2;
+    case OPERATOR_BITWISE_OR:     return (int64_t)v1 | (int64_t)v2;
+    case OPERATOR_BITWISE_XOR:    return (int64_t)v1 ^ (int64_t)v2;
+    case OPERATOR_BITWISE_AND:    return (int64_t)v1 & (int64_t)v2;
     case OPERATOR_EQUAL:          return v1 == v2;
     case OPERATOR_GREATER:        return v1 > v2;
     case OPERATOR_GREATER_EQUAL:  return v1 >= v2;
     case OPERATOR_LESS:           return v1 < v2;
     case OPERATOR_LESS_EQUAL:     return v1 <= v2;
-    case OPERATOR_BITWISE_SHL:    return (int)v1 << (int)v2;
-    case OPERATOR_BITWISE_SHR:    return (int)v1 >> (int)v2;
+    case OPERATOR_BITWISE_SHL:    return (int64_t)v1 << (int64_t)v2;
+    case OPERATOR_BITWISE_SHR:    return (int64_t)v1 >> (int64_t)v2;
     case OPERATOR_ADDITION:       return v1 + v2;
     case OPERATOR_SUBTRACTION:    return v1 - v2;
     case OPERATOR_MULTIPLICATION: return v1 * v2;
     case OPERATOR_DIVISION:       return (double)v1 / checkZero(v2);
-    case OPERATOR_MODULO:         return (int)v1 % (int)checkZero(v2);
+    case OPERATOR_MODULO:         return (int64_t)v1 % (int64_t)checkZero(v2);
     case OPERATOR_POWER:          return pow(v1, v2);
     case OPERATOR_EXPONENT:       return v1 * pow(10, v2);
     default:                      return 0;
@@ -284,7 +284,7 @@ T ExpressionParser<T>::parseValue()
                   unexpected();
                 throw calculator::error(expr_, "Syntax error: `:' expected at end of ternary operator");
               }
-    case '~': index_++; val = ~(int)parseValue(); break;
+    case '~': index_++; val = ~(int64_t)parseValue(); break;
     case '+': index_++; val =  parseValue(); break;
     case '-': index_++; val =  parseValue() * static_cast<T>(-1);
               break;
@@ -298,7 +298,7 @@ T ExpressionParser<T>::parseValue()
 template<typename T>
 T ExpressionParser<T>::parseExpr()
 {
-  int first, second, third;
+  int64_t first, second, third;
   stack_.push(OperatorValue(Operator(OPERATOR_NULL, 0, 'L'), 0));
   // first parse value on the left
   T value = parseValue();
@@ -343,7 +343,7 @@ T ExpressionParser<T>::parseExpr()
 }
 
 /*template<typename T>
-std::map<const std::string&, int> ExpressionParser<T>::setVariable(const std::string name, int value)
+std::map<const std::string&, int64_t> ExpressionParser<T>::setVariable(const std::string name, int64_t value)
 {
     vars_[name] = value;
     return vars_;
@@ -352,9 +352,9 @@ std::map<const std::string&, int> ExpressionParser<T>::setVariable(const std::st
 template<typename T>
 void ExpressionParser<T>::insertVars()
 {
-  std::vector<std::pair<string, int> > vars_(this->vars_.begin(), this->vars_.end());
-  std::sort(vars_.begin(), vars_.end(), [](const std::pair<std::string, int> elem1, const std::pair<std
-::string, int> elem2) -> bool
+  std::vector<std::pair<string, int64_t> > vars_(this->vars_.begin(), this->vars_.end());
+  std::sort(vars_.begin(), vars_.end(), [](const std::pair<std::string, int64_t> elem1, const std::pair<std
+::string, int64_t> elem2) -> bool
   {
      return elem1.first.length() > elem2.first.length();
   });

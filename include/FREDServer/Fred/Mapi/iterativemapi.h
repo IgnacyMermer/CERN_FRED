@@ -5,8 +5,7 @@
 #include <string>
 #include <algorithm>
 #include <vector>
-
-class Fred;
+#include "Fred/Mapi/mapi.h"
 
 using namespace std;
 
@@ -14,9 +13,6 @@ class Iterativemapi: public Mapi
 {
 public:
     void newRequest(string request);
-    
-    void publishAnswer(string message);
-    void publishError(string error);
 };
 
 #endif // ITERATIVEMAPI_H

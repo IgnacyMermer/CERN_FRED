@@ -3,6 +3,7 @@
 #include "Fred/queue.h"
 #include "Fred/alfinfo.h"
 #include "Alfred/print.h"
+#include "Fred/selectcommand.h"
 #include <exception>
 
 FredTopics::FredTopics(Fred* fred)
@@ -16,43 +17,51 @@ void FredTopics::registerUnit(string section, Mapping::Unit& unit, Instructions 
     {
         if (unit.unitIds[uId] == -1) continue;
 
+        vector<MappedCommand*> unitCommands;
+
+        string unitName = unit.unitName;
+        unitName.replace(unitName.find(MAPPING_UNIT_DELIMITER), 1, to_string(unit.unitIds[uId]));
+
         for (auto topicName = instructions.getTopics().begin(); topicName != instructions.getTopics().end(); topicName++)
         {
-            string fullName = this->fred->Name() + "/" + section + "/" + unit.unitName + to_string(unit.unitIds[uId]) + "/" + *topicName;
+            string fullName = this->fred->Name() + "/" + section + "/" + unitName + "/" + *topicName;
 
             topics[fullName] = ChainTopic();
             topics[fullName].name = fullName;
 
             topics[fullName].instruction = &(instructions.getInstructions()[*topicName]);
             topics[fullName].unit = &unit;
-            topics[fullName].alfLink = this->fred->getAlfClients().getAlfNode(unit.alfId, unit.serialId, unit.linkId, topics[fullName].instruction->type);
 
-            topics[fullName].alfQueue = this->fred->getAlfClients().getAlfQueue(unit.alfId);
-            //topics[fullName].alfDns = this->fred->getAlfClients().getAlfDns(unit.alfId);
+            topics[fullName].alfLink.first = !unit.alfs.first.alfId.empty() ? this->fred->getAlfClients().getAlfNode(unit.alfs.first.alfId, unit.alfs.first.serialId, unit.alfs.first.linkId, topics[fullName].instruction->type) : NULL;
+            topics[fullName].alfLink.second = !unit.alfs.second.alfId.empty() && topics[fullName].instruction->type == Instructions::Type::SWT ? this->fred->getAlfClients().getAlfNode(unit.alfs.second.alfId, unit.alfs.second.serialId, unit.alfs.second.linkId, topics[fullName].instruction->type) : NULL; //for backup CAN bus
 
-            topics[fullName].interval = 0.0;
-            topics[fullName].mapi = NULL;
-
-            //if (topics[fullName].instruction->subscribe)
-            //{
-            //    topics[fullName].command = new SubscribeCommand(fullName + "_REQ", this->fred, &topics[fullName], uId);
-            //    topics[fullName].alfInfo = new AlfInfo(this->fred->getAlfClients().getAlfSubscribeTopic(unit.alfId, unit.serialId, unit.linkId, topics[fullName].instruction->type, fullName), this->fred);
-            //}
-            //else
-            //{
-                topics[fullName].command =  new MappedCommand(fullName + "_REQ", this->fred, &topics[fullName], uId);
-                topics[fullName].alfInfo = NULL;
-            //}
-
-            this->fred->RegisterCommand(topics[fullName].command);
+            topics[fullName].alfQueue.first = topics[fullName].alfLink.first ? this->fred->getAlfClients().getAlfQueue(unit.alfs.first.alfId, unit.alfs.first.serialId, unit.alfs.first.linkId) : NULL;
+            topics[fullName].alfQueue.second = topics[fullName].alfLink.second ? this->fred->getAlfClients().getAlfQueue(unit.alfs.second.alfId, unit.alfs.second.serialId, unit.alfs.second.linkId) : NULL;
 
             topics[fullName].placeId = uId;
+            topics[fullName].mapi = NULL;
+
+            topics[fullName].command =  new MappedCommand(fullName + "_REQ", this->fred, &topics[fullName], uId);
+            this->fred->RegisterCommand(topics[fullName].command);
 
             topics[fullName].service = new ServiceString(fullName + "_ANS", this->fred);
             this->fred->RegisterService(topics[fullName].service);
 
             topics[fullName].error = new ServiceString(fullName + "_ERR", this->fred);
             this->fred->RegisterService(topics[fullName].error);
+
+            if (!unit.alfs.second.alfId.empty() && topics[fullName].instruction->type == Instructions::Type::SWT)
+            {
+                unitCommands.push_back((MappedCommand*)topics[fullName].command);
+            }
+        }
+
+        if (unitCommands.size())
+        {
+            ServiceString* service = new ServiceString(this->fred->Name() + "/" + section + "/" + unitName + "/SELECT_ALF_ANS", this->fred);
+            service->Update("ALF");
+            this->fred->RegisterService(service);
+            this->fred->RegisterCommand(new SelectCommand(this->fred->Name() + "/" + section + "/" + unitName + "/SELECT_ALF_REQ", this->fred, unitCommands, service));
         }
     }
 }
@@ -66,7 +75,10 @@ void FredTopics::registerGroup(string section, Groups::Group& group)
 
     for (size_t i = 0; i < group.unitIds.size(); i++)
     {
-        ChainTopic* chainTopic = &topics[this->fred->Name() + "/" + section + "/" + group.unitName + to_string(group.unitIds[i]) + "/" + group.topicName];
+        string unitName = group.unitName;
+        unitName.replace(unitName.find(MAPPING_UNIT_DELIMITER), 1, to_string(group.unitIds[i]));
+
+        ChainTopic* chainTopic = &topics[this->fred->Name() + "/" + section + "/" + unitName + "/" + group.topicName];
         groupTopics[fullName].chainTopics.push_back(chainTopic);
     }
 
@@ -90,13 +102,13 @@ void FredTopics::registerMapiObject(string topic, Mapi* mapi)
     auto it = topics.find(topic);
     if (it == topics.end())
     {
-        PrintError("Requested MAPI topic " + topic + " is not a registered topic!");
+        Print::PrintError("Requested MAPI topic " + topic + " is not a registered topic!");
         throw runtime_error("Requested MAPI topic " + topic + " is not a registered topic!");
     }
     else
     {
         topics[topic].mapi = mapi;
-        PrintVerbose("Mapi object registered to " + topic);
+        Print::PrintVerbose("Mapi object registered to " + topic);
     }
 }
 

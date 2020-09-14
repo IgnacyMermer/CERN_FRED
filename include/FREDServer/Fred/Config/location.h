@@ -5,6 +5,8 @@
 #include <vector>
 #include <map>
 
+#define MAPPING_UNIT_DELIMITER "\t"
+
 using namespace std;
 
 class Location
@@ -19,13 +21,12 @@ public:
             vector<int32_t> links;
         };
 
-        string dns;
         string id; //ALF_ID
         map<int32_t, SerialEntry> serials;
     };
 
+protected:
     map<string, AlfEntry> alfs;
-
 };
 
 #endif // LOCATION_H

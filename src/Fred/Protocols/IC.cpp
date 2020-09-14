@@ -4,13 +4,12 @@
 #include <string>
 #include <iomanip>
 #include <sstream>
-#include "Parser/processmessage.h"
 #include "Alfred/print.h"
 #include "Parser/utility.h"
 #include "Fred/Config/instructions.h"
 #include "Fred/Protocols/IC.h"
 
-string IC::generateMessage(Instructions::Instruction& instructions, vector<string>& outputPattern, ProcessMessage* processMessage)
+vector<string> IC::generateMessage(Instructions::Instruction& instructions, vector<string>& outputPattern, vector<string>& pollPattern, ProcessMessage* processMessage)
 {
 	string message;
 	for (size_t i = 0; i < instructions.message.size(); i++)
@@ -19,8 +18,13 @@ string IC::generateMessage(Instructions::Instruction& instructions, vector<strin
         message += "\n";
 
     }
-    message.erase(message.size() - 1);
-    return message;
+    
+    if (message.size())
+    {
+        message.erase(message.size() - 1);
+        pollPattern.push_back("");
+    }
+    return vector<string>({ message });
 }
 
 void IC::checkIntegrity(const string& request, const string& response)
@@ -28,16 +32,15 @@ void IC::checkIntegrity(const string& request, const string& response)
     //to be defined
 }
 
-vector<vector<unsigned long> > IC::readbackValues(const string& message, vector<string> outputPattern, Instructions::Instruction& instructions)
+vector<vector<unsigned long> > IC::readbackValues(const string& message, const vector<string>& outputPattern, Instructions::Instruction& instructions)
 {
     vector<vector<unsigned long> > results;
     //to be defined
     return results;
 }
 
-string IC::valuesToString(vector<vector<unsigned long> > values, int32_t multiplicity)
+uint32_t IC::getReturnWidth()
 {
-    stringstream result;
     //to be defined
-    return result.str();
+    return 4;
 }

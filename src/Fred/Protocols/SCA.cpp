@@ -4,59 +4,115 @@
 #include <string>
 #include <iomanip>
 #include <sstream>
-#include "Parser/processmessage.h"
 #include "Alfred/print.h"
 #include "Parser/utility.h"
 #include "Fred/Config/instructions.h"
 #include "Fred/Protocols/SCA.h"
 
-string SCA::generateMessage(Instructions::Instruction& instructions, vector<string>& outputPattern, ProcessMessage* processMessage)
+void SCA::SCApad(string& line)
+{
+    vector<string> scaParts = Utility::splitString(line, ",");
+    if (scaParts.size() != 2)
+    {
+        throw runtime_error("SCA comma is missing or more than one comman occured!");
+    }
+
+    if (scaParts[1] == "wait") //SCA wait
+    {
+        int32_t wait;
+
+        try
+        {
+            wait = stoi(scaParts[0]);
+        }
+        catch (invalid_argument& e)
+        {
+            throw runtime_error("SCA invalid wait value");
+        }
+
+        if (wait <= 0)
+        {
+            throw runtime_error("SCA invalid wait value");
+        }
+
+        line = to_string(wait) + ",wait";
+        return;
+    }
+
+    uint64_t command = stoull(scaParts[0], NULL, 16);
+    uint64_t data = stoull(scaParts[1], NULL, 16);
+    if (command > 0xffffffff || data > 0xffffffff)
+    {
+        throw runtime_error("SCA 32 bits exceeded!");
+    }
+
+    stringstream ss;
+    ss << "0x" << setw(8) << setfill('0') << hex << command << "," << "0x" << setw(8) << setfill('0') << hex << data;
+    line = ss.str();
+}
+
+vector<string> SCA::generateMessage(Instructions::Instruction& instructions, vector<string>& outputPattern, vector<string>& pollPattern, ProcessMessage* processMessage)
 {
     string message;
-    bool parseInVar = instructions.inVar.size() > 0;
+    bool parseInVar = instructions.inVars.size() > 0;
 
     int32_t multiplicity = processMessage->getMultiplicity();
     size_t messageSize = instructions.message.size();
+
+    vector<string> result;
 
     for (int32_t m = 0; m < multiplicity; m++)
     {
         for (size_t i = 0; i < messageSize; i++)
         {
-            string outVar;
-            stringstream ss;
+            string outVars;
             string line = instructions.message[i];
 
-            if (parseInVar) processMessage->parseInputVariables(line, instructions.inVar, m); //parse invariables
+            if (parseInVar) processMessage->parseInputVariables(line, instructions.inVars, m); //parse IN_VARs
+
+            size_t dolPos = line.find('$'); //user poll
+            if (dolPos != string::npos)
+            {
+                string pollEqn = line.substr(dolPos + 1);
+
+                line.erase(dolPos); //remove $eqn
+
+                SCApad(line);
+
+                if (!message.empty())
+                {
+                    result.push_back(message.erase(message.size() - 1));
+                    pollPattern.push_back("");
+                    message = "";
+                }
+
+                result.push_back(line);
+                pollPattern.push_back(pollEqn);
+
+                continue;
+            }
 
             size_t atPos = line.find('@');
-
             if (atPos != string::npos)
             {
-                outVar = line.substr(atPos + 1);
+                outVars = line.substr(atPos + 1);
                 line.erase(atPos); //remove @OUT_VAR
             }
 
-            size_t comma = line.find(',');
-            if (comma != string::npos)
-            {
-                unsigned long command, data;
-                command = stol(line.substr(0, comma), 0, 16);
-                data = stol(line.substr(comma + 1), 0, 16);
+            SCApad(line);
 
-                if (command > 0xffffffff || data > 0xffffffff) throw runtime_error("SCA 16 bits exceeded!");
-
-                ss << "0x" << setw(8) << setfill('0') << hex << command << "," << "0x" << setw(8) << setfill('0') << hex << data;
-                line = ss.str();
-            }
-            else throw runtime_error("SCA comma is missing!");
-
-            outputPattern.push_back(outVar); //push_back outvar name, empty string if not present
+            outputPattern.push_back(outVars); //push_back outvar name, empty string if not present
             message += line + "\n";
         }
     }
 
-    message.erase(message.size() - 1);
-    return message;
+    if (!message.empty())
+    {
+        result.push_back(message.erase(message.size() - 1));
+        pollPattern.push_back("");
+    }
+
+    return result;
 }
 
 void SCA::checkIntegrity(const string& request, const string& response)
@@ -82,19 +138,33 @@ void SCA::checkIntegrity(const string& request, const string& response)
         transform(reqVec[i].begin(), reqVec[i].end(), reqVec[i].begin(), ::tolower);
         transform(resVec[i].begin(), resVec[i].end(), resVec[i].begin(), ::tolower);
 
-        if (resVec[i].length() != 21 || (resVec[i].substr(0, resVec[i].find(",")) != reqVec[i].substr(0, reqVec[i].find(","))))
+        vector<string> scaPartsReq = Utility::splitString(reqVec[i], ",");
+        vector<string> scaPartsRes = Utility::splitString(resVec[i], ",");
+        if (scaPartsReq.size() == 2 && scaPartsRes.size() > 0)
         {
-            throw runtime_error("SCA: Integrity check of received message failed!");
+            if (scaPartsReq[1] == "wait" && scaPartsReq[0] == scaPartsRes[0])
+            {
+                continue;
+            }
+            else if (scaPartsReq.size() == scaPartsRes.size() && scaPartsReq[0].substr(0, 6) == scaPartsRes[0].substr(0, 6)) //check only CH and TRID
+            {
+                continue;
+            }
         }
+
+        throw runtime_error("SCA: Integrity check of received message failed!");
     }
 }
 
-vector<vector<unsigned long> > SCA::readbackValues(const string& message, vector<string> outputPattern, Instructions::Instruction& instructions)
+/*
+ * Return VARs values (as vector because of the multiplicity) ordered top to bottom as in the sequence 
+ */
+vector<vector<unsigned long> > SCA::readbackValues(const string& message, const vector<string>& outputPattern, Instructions::Instruction& instructions)
 {
-    vector<string>& outVars = instructions.outVar;
+    vector<string>& vars = instructions.vars;
     vector<string> splitted = Utility::splitString(message, "\n");
-    vector<unsigned long> values;
 
+    vector<unsigned long> values;
     for (size_t i = 0; i < splitted.size(); i++)
     {
         size_t pos = splitted[i].find(",");
@@ -102,35 +172,26 @@ vector<vector<unsigned long> > SCA::readbackValues(const string& message, vector
         {
             values.push_back(stoul(splitted[i].substr(pos + 1), NULL, 16)); //all 32 bits payloads
         }
+        else
+        {
+            values.push_back(0); //because of SCA wait
+        }
     }
 
-    vector<vector<unsigned long> > results(outVars.size(), vector<unsigned long>());
-
-    for (size_t i = 0; i < values.size(); i++) //for each line of the response
+    vector<vector<unsigned long> > results(vars.size(), vector<unsigned long>());
+    for (size_t i = 0; i < values.size(); i++)
     {
-        if (outputPattern[i] != "") //if there is an outvar in the request line
+        if (outputPattern[i] != "") //if there is a VAR in the request line
         {
-            size_t id = distance(outVars.begin(), find(outVars.begin(), outVars.end(), outputPattern[i]));
-            results[id].push_back(values[i]); //push into results
+            size_t id = distance(vars.begin(), find(vars.begin(), vars.end(), outputPattern[i])); //Order values as VARs
+            results[id].push_back(values[i]);
         }
     }
 
     return results;
 }
 
-string SCA::valuesToString(vector<vector<unsigned long> > values, int32_t multiplicity)
+uint32_t SCA::getReturnWidth()
 {
-    stringstream result;
-
-    for (int32_t m = 0; m < multiplicity; m++)
-    {
-        for (size_t v = 0; v < values.size(); v++)
-        {
-            result << "0x" << setw(8) << setfill('0') << hex << values[v][m];
-            if (v < values.size() - 1) result << ",";
-        }
-        if (m < multiplicity - 1) result << "\n";
-    }
-
-    return result.str();
+    return SCA_RETURN_WIDTH;
 }

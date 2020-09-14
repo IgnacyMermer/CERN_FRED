@@ -1,41 +1,43 @@
 #ifndef __TYPES
 #define __TYPES
 
-enum DIM_TYPE
+namespace ALFRED_TYPES
 {
-	NONE,
-	INT,
-	FLOAT,
-    STRING,
-	DATA
-};
+    enum DIM_TYPE
+    {
+        NONE,
+        INT,
+        FLOAT,
+        STRING,
+        DATA
+    };
 
-enum FNC_TYPE
-{
-	BASE,
-	TIME,
-	SHOT
-};
+    enum CONNECT
+    {
+        COMMAND_SERVICE,
+        INFO_SERVICE,
+        COMMAND_CLIENT,
+        INFO_CLIENT,
+        COMMAND_RPCINFO,
+        INFO_RPCINFO,
+        RPCINFO_SERVICE,
+        RPCINFO_CLIENT,
+        RPC_SERVICE,
+        RPC_CLIENT
+    };
 
-enum CONNECT
-{
-	COMMAND_SERVICE,
-	COMMAND_FUNCTION,
-	FUNCTION_SERVICE,
-	INFO_SERVICE,
-	INFO_FUNCTION,
-	COMMAND_CLIENT,
-	FUNCTION_CLIENT,
-    INFO_CLIENT,
-    COMMAND_RPCINFO,
-    FUNCTION_RPCINFO,
-    INFO_RPCINFO,
-    RPCINFO_SERVICE,
-    RPCINFO_CLIENT,
-    RPCINFO_FUNCTION,
-    RPC_SERVICE,
-    RPC_CLIENT,
-    RPC_FUNCTION
-};
+    enum CRU_TYPES
+    {
+      READ,
+      WRITE,
+      PATTERN_PLAYER
+    };
+
+    enum LLA_TYPES
+    {
+        START,
+        STOP
+    };
+}
 
 #endif
