@@ -29,16 +29,16 @@ Fred::Fred(bool parseOnly, map<string, string> config, string mainDirectory): AL
 
     if (config["DB_CONN"] != "" && config["DB_USER"] != "" && config["DB_PASS"] != "")
     {
-        PrintInfo("Connecting to database " + config["DB_USER"] + ".");
+        Print::PrintInfo("Connecting to database " + config["DB_USER"] + ".");
         this->databaseInterface = new DatabaseInterface(config["DB_USER"], config["DB_PASS"], config["DB_CONN"]);
 
         if (this->databaseInterface->connect())
         {
-            PrintInfo("Successfully connected to " + config["DB_USER"] + ".");
+            Print::PrintInfo("Successfully connected to " + config["DB_USER"] + ".");
         }
         else
         {
-            PrintError("Cannot connect to " + config["DB_USER"] + "!");
+            Print::PrintError("Cannot connect to " + config["DB_USER"] + "!");
         }
     }
 
