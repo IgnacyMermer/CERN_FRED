@@ -27,6 +27,9 @@ RUN yum install -y yum-plugin-ovl \
 RUN yum install -y centos-release-scl \
     && yum-config-manager --enable rhel-server-rhscl-7-rpms \
     && yum install -y devtoolset-7
+    
+# Install database dependencies
+RUN yum install -y libaio
 
 # Set the correct timezone
 RUN ln -sf /usr/share/zoneinfo/Europe/Zurich /etc/localtime
