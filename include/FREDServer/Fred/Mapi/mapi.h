@@ -34,6 +34,9 @@ public:
     void publishError(string message);
 
     virtual bool customMessageProcess();
+
+    bool startLlaOverride();
+    void stopLlaOverride();
 };
 
 #endif // MAPI_H

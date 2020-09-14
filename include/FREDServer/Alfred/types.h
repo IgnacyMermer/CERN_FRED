@@ -32,6 +32,12 @@ namespace ALFRED_TYPES
       WRITE,
       PATTERN_PLAYER
     };
+
+    enum LLA_TYPES
+    {
+        START,
+        STOP
+    };
 }
 
 #endif

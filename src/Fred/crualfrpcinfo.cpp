@@ -47,3 +47,8 @@ const void* CruAlfRpcInfo::Execution(void *value) //todo
 
     return NULL;
 }
+
+const string& CruAlfRpcInfo::getName()
+{
+    return this->name;
+}

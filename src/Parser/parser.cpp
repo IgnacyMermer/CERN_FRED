@@ -15,7 +15,7 @@ Parser::Parser(string sectionsPath)
     this->badFiles = false;
 }
 
-vector<string> Parser::findFiles(string directory)
+vector<string> Parser::findFiles(string directory, const string &suffix)
 {
     DIR* dir = opendir(directory.c_str());
     if (!dir)
@@ -29,7 +29,7 @@ vector<string> Parser::findFiles(string directory)
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL)
     {
-        if (entry->d_name[0] != '.' && strstr(entry->d_name, ".section") != NULL)
+        if (entry->d_name[0] != '.' && strstr(entry->d_name, suffix.c_str()) != NULL)
         {
             files.push_back(entry->d_name);
         }
@@ -49,7 +49,7 @@ vector<Section> Parser::parseSections()
     {
         vector<string> lines = readFile(files[i], this->sectionsPath);
 
-        if(!lines.empty())
+        if (!lines.empty())
         {
             string name;
             vector<string> rest;
@@ -59,7 +59,7 @@ vector<Section> Parser::parseSections()
 
             rest = subsection;
 
-            vector<string> instructionsLines, mappingLines, groupsLines, maskingLines, cruMappingLines;
+            vector<string> instructionsLines, mappingLines, groupsLines, maskingLines;
 
             while (rest.size()) //rest is shrinking each loop
             {
@@ -83,10 +83,6 @@ vector<Section> Parser::parseSections()
                 {
                     maskingLines = subsection;
                 }
-                else if (name == "CRU_MAPPING")
-                {
-                    cruMappingLines = subsection;
-                }
                 else
                 {
                     Print::PrintError(files[i] + " has invalid name of paragraph: " + name + "!");
@@ -100,20 +96,19 @@ vector<Section> Parser::parseSections()
                 if (!mappingLines.size()) Print::PrintError("MAPPING section in file '" + files[i] + "' is missing!");
                 this->badFiles = true;
             }
-            else if (!cruMappingLines.size() && !instructionsLines.size() && !mappingLines.size())
+            else if (!instructionsLines.size() && !mappingLines.size())
             {
-                Print::PrintError("ALL sections in file '" + files[i] + "' are missing! Must contain 'CRU_MAPPING' or {'INSTRUCTIONS' and 'MAPPING'}");
+                Print::PrintError("ALL sections in file '" + files[i] + "' are missing! Must contain {'INSTRUCTIONS' and 'MAPPING'}");
                 this->badFiles = true;
             }
 
-            if(!this->badFiles)
+            if (!this->badFiles)
             {
                 try
                 {
                     section.instructions = Instructions(instructionsLines, this->sectionsPath);
                     section.mapping = Mapping(mappingLines);
                     section.groups = Groups(groupsLines);
-                    section.cruMapping = CruMapping(cruMappingLines);
 
                     // next line will segfault if Mapping section is bad
                     //  e.g. wasn't processed due to bad section name
@@ -128,6 +123,66 @@ vector<Section> Parser::parseSections()
                 } 
             }
             sections.push_back(section);  
+        }
+        else
+        {
+            badFiles = true;
+        }
+    }
+    return sections;
+}
+
+vector<Section> Parser::parseCruSections()
+{
+    vector<Section> sections;
+
+    vector<string> files = findFiles(this->sectionsPath, ".cru");
+    for (size_t i = 0; i < files.size(); i++)
+    {
+        vector<string> lines = readFile(files[i], this->sectionsPath);
+
+        if (!lines.empty())
+        {
+            Section section(""); //CRU section has no name
+
+            vector<string> cruMappingLines, llaMappingLines;
+
+            while (lines.size()) //lines is shrinking each loop
+            {
+                vector<string> temp;
+                string name;
+                vector<string> subsection = getSubsection(lines, "{}", name, temp);
+                lines = temp;
+
+                if (name == "CRU_MAPPING")
+                {
+                    cruMappingLines = subsection;
+                }
+                else if (name == "LLA_MAPPING")
+                {
+                    llaMappingLines = subsection;
+                }
+                else
+                {
+                    Print::PrintError(files[i] + " has invalid name of paragraph: " + name + "!");
+                    this->badFiles = true;
+                }
+            }
+
+            if (!this->badFiles)
+            {
+                try
+                {
+                    section.cruMapping = CruMapping(cruMappingLines);
+                    section.llaMapping = LlaMapping(llaMappingLines);
+                }
+                catch (exception& e)
+                {
+                    Print::PrintError(e.what());
+                    this->badFiles = true;
+                }
+            }
+            sections.push_back(section);
         }
         else
         {
@@ -152,7 +207,7 @@ void Parser::checkGroup(Section section)
             throw runtime_error("Non existing group topic");
         }
 
-        if(i->unitIds.size() == 0)
+        if (i->unitIds.size() == 0)
         {
             Print::PrintError("Group " + i->name + " in section " + section.getName() + " has no units!");
             throw runtime_error("Group with no units");
@@ -273,7 +328,7 @@ bool Parser::balancedBraces(vector<string> lines, string name)
   
     for (int i = 0; i < lines.size(); i++) 
     {
-        for(int j = 0; j < lines[i].length(); j++)
+        for (int j = 0; j < lines[i].length(); j++)
         {     
             if (lines[i][j]=='('||lines[i][j]=='['||lines[i][j]=='{') c++;
             
@@ -281,7 +336,7 @@ bool Parser::balancedBraces(vector<string> lines, string name)
         }
     }
 
-    if(c != 0)
+    if (c != 0)
     {
         Print::PrintError(name + " has mismatched braces!");
     }

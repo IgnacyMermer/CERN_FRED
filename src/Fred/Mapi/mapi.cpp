@@ -6,6 +6,7 @@
 #include "Fred/fred.h"
 #include "Alfred/print.h"
 #include "Parser/processmessage.h"
+#include "Fred/llalock.h"
 
 void Mapi::registerMapi(Fred* fred, string name)
 {
@@ -36,4 +37,30 @@ void Mapi::publishError(string error)
 bool Mapi::customMessageProcess()
 {
     return false;
+}
+
+bool Mapi::startLlaOverride()
+{
+    if (thisMapi->alfQueue.first)
+    {
+        LlaLock* lla = thisMapi->alfQueue.first->getLlaLock();
+        if (lla)
+        {
+            return lla->overrideLlaSession(true);
+        }
+    }
+
+    return true;
+}
+
+void Mapi::stopLlaOverride()
+{
+    if (thisMapi->alfQueue.first)
+    {
+        LlaLock* lla = thisMapi->alfQueue.first->getLlaLock();
+        if (lla)
+        {
+            lla->overrideLlaSession(false);
+        }
+    }
 }

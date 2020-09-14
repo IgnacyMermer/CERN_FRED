@@ -2,6 +2,7 @@
 #include "Fred/alfrpcinfo.h"
 #include "Fred/alfinfo.h"
 #include "Alfred/print.h"
+#include "Fred/llalock.h"
 
 Queue::Queue(string alfId, int32_t serial, int32_t link, Fred* fred)
 {
@@ -9,6 +10,7 @@ Queue::Queue(string alfId, int32_t serial, int32_t link, Fred* fred)
     this->fred = fred;
     this->isFinished = false;
     this->isProcessing = false;
+    this->llaLock = NULL;
     this->queueThread = new thread(clearQueue, this);
 }
 
@@ -92,6 +94,14 @@ void Queue::clearQueue(Queue *queue)
 
                     do
                     {
+                        if (!queue->checkLlaStartSession())
+                        {
+                            Print::PrintError(request.second->name, "Error starting LLA session!");
+                            request.second->error->Update("Error starting LLA session!");
+                            errorOccured = true;
+                            continue;
+                        }
+
                         Print::PrintVerbose(request.second->name, "Sending RPC request:\n" + string(buffer));
                         alfLink->Send(buffer);
 
@@ -105,6 +115,8 @@ void Queue::clearQueue(Queue *queue)
 
             queue->isProcessing = false;
         }
+
+        queue->checkLlaStopSession(); //if no request in any queue, stop LLA session
     }
 }
 
@@ -119,4 +131,43 @@ void Queue::newRequest(pair<ProcessMessage*, ChainTopic*> request)
     {
         conditionVar.notify_one();
     }
+}
+
+size_t Queue::getStackSize()
+{
+    lock_guard<mutex> lockGuard(stackMutex);
+    return stack.size();
+}
+
+void Queue::setLlaLock(LlaLock* llaLock)
+{
+    this->llaLock = llaLock;
+}
+
+LlaLock* Queue::getLlaLock()
+{
+    return this->llaLock;
+}
+
+bool Queue::checkLlaStartSession()
+{
+    if (!this->llaLock) //ignore LLA if not set
+    {
+        return true;
+    }
+
+    return this->llaLock->startLlaSession();
+}
+
+void Queue::checkLlaStopSession()
+{
+    if (this->llaLock)
+    {
+        this->llaLock->stopLlaSession();
+    }
+}
+
+bool Queue::processing()
+{
+    return this->isProcessing;
 }
