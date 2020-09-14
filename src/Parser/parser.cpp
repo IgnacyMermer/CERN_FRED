@@ -96,9 +96,9 @@ vector<Section> Parser::parseSections()
                 if (!mappingLines.size()) Print::PrintError("MAPPING section in file '" + files[i] + "' is missing!");
                 this->badFiles = true;
             }
-            else if (!cruMappingLines.size() && !instructionsLines.size() && !mappingLines.size())
+            else if (!instructionsLines.size() && !mappingLines.size())
             {
-                Print::PrintError("ALL sections in file '" + files[i] + "' are missing! Must contain 'CRU_MAPPING' or {'INSTRUCTIONS' and 'MAPPING'}");
+                Print::PrintError("ALL sections in file '" + files[i] + "' are missing! Must contain {'INSTRUCTIONS' and 'MAPPING'}");
                 this->badFiles = true;
             }
 
