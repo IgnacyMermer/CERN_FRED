@@ -17,7 +17,7 @@ public:
     LlaLock(const string& alf, int32_t serial, uint32_t repeat, uint32_t delay, vector<Queue*> queues, Fred* fred);
     bool startLlaSession();
     bool stopLlaSession();
-    bool checkQueuesEmpty();
+    bool overrideLlaSession(bool enable);
 
 private:
     string alf;
@@ -27,9 +27,11 @@ private:
     Fred* fred;
 
     LlaAlfRpcInfo *startLla, *stopLla;
-    atomic<bool> hasLlaSession;
+    atomic<bool> hasLlaSession, overridenSession;
 
     mutex sessionAccesss;
+
+    bool checkQueuesEmpty();
 };
 
 #endif

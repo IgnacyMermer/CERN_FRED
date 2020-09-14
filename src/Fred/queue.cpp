@@ -144,6 +144,11 @@ void Queue::setLlaLock(LlaLock* llaLock)
     this->llaLock = llaLock;
 }
 
+LlaLock* Queue::getLlaLock()
+{
+    return this->llaLock;
+}
+
 bool Queue::checkLlaStartSession()
 {
     if (!this->llaLock) //ignore LLA if not set
@@ -156,8 +161,13 @@ bool Queue::checkLlaStartSession()
 
 void Queue::checkLlaStopSession()
 {
-    if (this->llaLock && this->llaLock->checkQueuesEmpty())
+    if (this->llaLock)
     {
         this->llaLock->stopLlaSession();
     }
+}
+
+bool Queue::processing()
+{
+    return this->isProcessing;
 }

@@ -10,6 +10,7 @@ LlaLock::LlaLock(const string& alf, int32_t serial, uint32_t repeat, uint32_t de
     this->queues = queues;
     this->fred = fred;
     this->hasLlaSession = false;
+    this->overridenSession = false;
 
     this->startLla = dynamic_cast<LlaAlfRpcInfo*>(this->fred->GetRpcInfo(this->alf + "/SERIAL_" + to_string(this->serial) + "/LLA_SESSION_START"));
     this->stopLla = dynamic_cast<LlaAlfRpcInfo*>(this->fred->GetRpcInfo(this->alf + "/SERIAL_" + to_string(this->serial) + "/LLA_SESSION_STOP"));
@@ -53,15 +54,44 @@ bool LlaLock::stopLlaSession()
         return true;
     }
 
-    this->hasLlaSession = !this->stopLla->requestLlaSession(true);
+    if (this->overridenSession)
+    {
+        return false;
+    }
+
+    if (this->checkQueuesEmpty())
+    {
+        this->hasLlaSession = !this->stopLla->requestLlaSession(true);
+    }
+
     return !this->hasLlaSession;
+}
+
+bool LlaLock::overrideLlaSession(bool enable)
+{
+    if (enable)
+    {
+        bool startStatus = this->startLlaSession();
+        if (startStatus)
+        {
+            this->overridenSession = true;
+        }
+
+        return startStatus;
+    }
+    else
+    {
+        this->overridenSession = false;
+        this->stopLlaSession();
+        return true;
+    }
 }
 
 bool LlaLock::checkQueuesEmpty()
 {
     for (size_t i = 0; i < this->queues.size(); i++)
     {
-        if (this->queues[i]->getStackSize())
+        if (this->queues[i]->getStackSize() || this->queues[i]->processing())
         {
             return false;
         }

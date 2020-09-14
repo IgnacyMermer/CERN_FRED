@@ -25,6 +25,8 @@ public:
 
     size_t getStackSize();
     void setLlaLock(LlaLock* llaLock);
+    LlaLock* getLlaLock();
+    bool processing();
 
 private:
     string id;
