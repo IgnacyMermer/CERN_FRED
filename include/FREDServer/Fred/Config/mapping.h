@@ -16,7 +16,8 @@ public:
         struct Alf
         {
             string alfId;
-            int32_t serialId, linkId;
+            int32_t serialId, endpointId, linkId;
+            AlfEntry::Version version;
         };
 
         string unitName;
@@ -33,7 +34,7 @@ private:
     vector<Unit> units;
 
     void processUnit(string& left, string& right);
-    void processLocation(string alfId, int32_t serialId, int32_t linkId);
+    void processLocation(string alfId, int32_t serialId, int32_t endpointId, int32_t linkId, AlfEntry::SerialEntry::CardType cardType);
 };
 
 #endif // MAPPING_H

@@ -14,14 +14,12 @@ using namespace std;
 class LlaLock
 {
 public:
-    LlaLock(const string& alf, int32_t serial, uint32_t repeat, uint32_t delay, vector<Queue*> queues, Fred* fred);
+    LlaLock(const string& alf, int32_t serial, int32_t endpoint, uint32_t repeat, uint32_t delay, vector<Queue*> queues, Fred* fred);
     bool startLlaSession();
     bool stopLlaSession();
     bool overrideLlaSession(bool enable);
 
 private:
-    string alf;
-    int32_t serial;
     uint32_t repeat, delay;
     vector<Queue*> queues;
     Fred* fred;

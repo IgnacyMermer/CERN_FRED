@@ -15,6 +15,10 @@ const int SWT_RETURN_WIDTH = 4; //Width of the SWT OUT_VARs
 
 class SWT
 {
+private:
+    static const string swtResetWord_v0;
+    static const string swtResetWord_v1;
+
 public:
     static vector<string> generateMessage(Instructions::Instruction& instructions, vector<string>& outputPattern, vector<string>& pollPattern, ProcessMessage* processMessage);
     static void checkIntegrity(const string& request, const string& response);

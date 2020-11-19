@@ -23,7 +23,7 @@ class AlfClients
 public:
     struct Nodes
     {
-        AlfRpcInfo *sca, *swt, *ic;
+        AlfRpcInfo *sca, *swt, *ic, *crorc;
         Queue *queue;
     };
 
@@ -39,9 +39,9 @@ public:
     };
 
 private:
-    map<string, map<int32_t, map<int32_t, Nodes> > > clients;
-    map<string, map<int32_t, CruNodes> > cruClients;
-    map<string, map<int32_t, LlaNodes> > llaClients;
+    map<string, map<int32_t, map<int32_t, map<int32_t, Nodes> > > > clients;
+    map<string, map<int32_t, map<int32_t, CruNodes> > > cruClients;
+    map<string, map<int32_t, map<int32_t, LlaNodes> > > llaClients;
     Fred* fred;
 
 public:
@@ -49,15 +49,15 @@ public:
     ~AlfClients();
 
     void registerAlf(Location::AlfEntry& entry);
-    Nodes createAlfInfo(string id, int32_t serial, int32_t link);
+    Nodes createAlfInfo(string id, int32_t serial, int32_t endpoint, int32_t link, Location::AlfEntry::Version version, Location::AlfEntry::SerialEntry::CardType cardType);
     void registerCruAlf(Location::AlfEntry& entry);
     void registerLlaAlf(LlaMapping::LlaEntry &entry);
 
-    AlfRpcInfo* getAlfNode(string alf, int32_t serial, int32_t link, Instructions::Type type);
-    Queue* getAlfQueue(string alf, int32_t serial, int32_t link);
-    vector<Queue*> getAlfCruQueues(string alf, int32_t serial);
+    AlfRpcInfo* getAlfNode(string alf, int32_t serial, int32_t endpoint, int32_t link, Instructions::Type type);
+    Queue* getAlfQueue(string alf, int32_t serial, int32_t endpoint, int32_t link);
+    vector<Queue*> getAlfCruQueues(string alf, int32_t serial, int32_t endpoint);
 
-    CruAlfRpcInfo* getCruAlfNode(string alf, int32_t serial, ALFRED_TYPES::CRU_TYPES type);
+    CruAlfRpcInfo* getCruAlfNode(string alf, int32_t serial, int32_t endpoint, ALFRED_TYPES::CRU_TYPES type);
 
     vector<CruAlfRpcInfo*> getAllCruRpcs();
     vector<LlaAlfRpcInfo*> getAllLlaRpcs();

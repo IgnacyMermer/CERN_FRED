@@ -5,11 +5,12 @@
 
 #define MAX_POLL_COUNT 100
 
-AlfRpcInfo::AlfRpcInfo(string name, string dns, Fred* fred): RpcInfoString::RpcInfoString(name, dns, (ALFRED*)fred)
+AlfRpcInfo::AlfRpcInfo(string name, string dns, Fred* fred, Location::AlfEntry::Version version): RpcInfoString::RpcInfoString(name, dns, (ALFRED*)fred)
 {
     this->currentTransaction.first = NULL;
     this->currentTransaction.second = NULL;
     this->name = name;
+    this->version = version;
     this->currentPart = 0;
     this->pollRepeat = 0;
 }
@@ -142,4 +143,9 @@ bool AlfRpcInfo::isTransactionAvailable()
 const string &AlfRpcInfo::getName()
 {
     return this->name;
+}
+
+Location::AlfEntry::Version AlfRpcInfo::getVersion()
+{
+    return this->version;
 }

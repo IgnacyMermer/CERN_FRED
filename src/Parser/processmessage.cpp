@@ -13,6 +13,7 @@
 #include "Fred/Protocols/SCA.h"
 #include "Fred/Protocols/SWT.h"
 #include "Fred/Protocols/IC.h"
+#include "Fred/Protocols/CRORC.h"
 
 const string ProcessMessage::SUCCESS = "success";
 const string ProcessMessage::FAILURE = "failure";
@@ -20,11 +21,12 @@ const string ProcessMessage::FAILURE = "failure";
 /*
  * ProcessMessage constructor for regular topics 
  */
-ProcessMessage::ProcessMessage(string message, int32_t placeId, bool useCru)
+ProcessMessage::ProcessMessage(string message, int32_t placeId, bool useCru, Location::AlfEntry::Version alfVersion)
 {
     groupCommand = NULL;
     mapi = NULL;
     this->useCru = useCru;
+    this->alfVersion = alfVersion;
     correct = checkMessage(message);
     if (correct)
     {
@@ -59,12 +61,13 @@ ProcessMessage::ProcessMessage(string message, int32_t placeId, bool useCru)
 /*
  * ProcessMessage constructor for group topics 
  */
-ProcessMessage::ProcessMessage(map<string, vector<double> > inVars, int32_t placeId, GroupCommand* groupCommand, bool useCru)
+ProcessMessage::ProcessMessage(map<string, vector<double> > inVars, int32_t placeId, GroupCommand* groupCommand, bool useCru, Location::AlfEntry::Version alfVersion)
 {
     this->groupCommand = groupCommand;
     mapi = NULL;
     correct = true;
     this->useCru = useCru;
+    this->alfVersion = alfVersion;
 
     size_t varSize = inVars.size();
     if (varSize > 0)
@@ -101,11 +104,12 @@ ProcessMessage::ProcessMessage(map<string, vector<double> > inVars, int32_t plac
 /*
  * ProcessMessage constructor for MAPI topics 
  */
-ProcessMessage::ProcessMessage(Mapi* mapi, string input, bool useCru)
+ProcessMessage::ProcessMessage(Mapi* mapi, string input, bool useCru, Location::AlfEntry::Version alfVersion)
 {
     this->mapi = mapi;
     this->fullMessage = input;
     this->useCru = useCru;
+    this->alfVersion = alfVersion;
 }
 
 bool ProcessMessage::checkMessage(string& message)
@@ -147,6 +151,8 @@ vector<string> ProcessMessage::generateFullMessage(Instructions::Instruction& in
             case Instructions::Type::SCA: fullMessage = SCA::generateMessage(instructions, outputPattern, pollPattern, this);
                 break;
             case Instructions::Type::IC: fullMessage = IC::generateMessage(instructions, outputPattern, pollPattern, this);
+                break;
+            case Instructions::Type::CRORC: fullMessage = CRORC::generateMessage(instructions, outputPattern, pollPattern, this);
                 break;
         }
     }
@@ -206,6 +212,8 @@ vector<vector<unsigned long> > ProcessMessage::readbackValues(const string& mess
                 break;
             case Instructions::Type::IC: results = IC::readbackValues(message, outputPattern, instructions);
                 break;
+            case Instructions::Type::CRORC: results = CRORC::readbackValues(message, outputPattern, instructions);
+                break;
         }
     }
     catch (exception& e)
@@ -246,6 +254,8 @@ uint32_t ProcessMessage::getReturnWidth(Instructions::Type type)
         case Instructions::Type::SCA: width = SCA::getReturnWidth();
             break;
         case Instructions::Type::IC: width = IC::getReturnWidth();
+            break;
+        case Instructions::Type::CRORC: width = CRORC::getReturnWidth();
             break;
     }
 
@@ -481,4 +491,9 @@ vector<string>* ProcessMessage::getPollPattern()
 bool ProcessMessage::getUseCru()
 {
     return useCru;
+}
+
+Location::AlfEntry::Version ProcessMessage::getAlfVersion()
+{
+    return alfVersion;
 }

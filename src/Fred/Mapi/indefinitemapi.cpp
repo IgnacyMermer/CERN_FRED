@@ -4,6 +4,7 @@
 #include "Parser/processmessage.h"
 #include "Alfred/print.h"
 #include "Fred/queue.h"
+#include "Fred/alfrpcinfo.h"
 #include <exception>
 
 map<thread::id, IndefiniteMapi*> IndefiniteMapi::mappedThreads;
@@ -125,16 +126,16 @@ string IndefiniteMapi::executeAlfSequence(string sequence)
     unique_lock<mutex> sequenceLock(sequenceMutex);
 
     bool useCru = dynamic_cast<MappedCommand*>(this->thisMapi->command)->getUseCru();
-    ProcessMessage* processMessage = new ProcessMessage(this, sequence, useCru);
-    Queue* queue = useCru ? this->thisMapi->alfQueue.first : this->thisMapi->alfQueue.second;
-    if (!queue)
+    AlfRpcInfo* alfRpcInfo = useCru ? this->thisMapi->alfLink.first : this->thisMapi->alfLink.second;
+    if (alfRpcInfo == NULL)
     {
         string error = "Required ALF/CANALF not available!";
         Print::PrintError(name, error);
-        delete processMessage;
         return "failure\n" + error;
     }
 
+    ProcessMessage* processMessage = new ProcessMessage(this, sequence, useCru, alfRpcInfo->getVersion());
+    Queue* queue = useCru ? this->thisMapi->alfQueue.first : this->thisMapi->alfQueue.second;
     queue->newRequest(make_pair(processMessage, thisMapi));
 
     this->sequenceRecv.wait(sequenceLock);

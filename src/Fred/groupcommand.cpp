@@ -5,6 +5,7 @@
 #include "Fred/fredtopics.h"
 #include "Fred/queue.h"
 #include "Fred/mappedcommand.h"
+#include "Fred/alfrpcinfo.h"
 
 GroupCommand::GroupCommand(string name, Fred* fred, GroupTopic *topic): CommandString::CommandString(name, (ALFRED*)fred)
 {
@@ -34,19 +35,19 @@ const void* GroupCommand::Execution(void *value)
     for (size_t i = 0; i < topic->chainTopics.size(); i++)
     {
         bool useCru = ((MappedCommand*)topic->chainTopics[i]->command)->getUseCru();
-        ProcessMessage* processMessage = new ProcessMessage(topic->inVars, topic->chainTopics[i]->placeId, this, useCru);
-
-        Queue* queue = useCru ? this->topic->chainTopics[i]->alfQueue.first : this->topic->chainTopics[i]->alfQueue.second;
-        if (!queue)
+        AlfRpcInfo* alfRpcInfo = useCru ? topic->chainTopics[i]->alfLink.first : topic->chainTopics[i]->alfLink.second;
+        if (alfRpcInfo == NULL)
         {
             string error = "Required ALF/CANALF not available!";
             Print::PrintError(name, error);
             topic->error->Update(error);
             Print::PrintError(topic->name, "Updating error service!");
-            delete processMessage;
             return NULL;
         }
 
+        ProcessMessage* processMessage = new ProcessMessage(topic->inVars, topic->chainTopics[i]->placeId, this, useCru, alfRpcInfo->getVersion());
+
+        Queue* queue = useCru ? this->topic->chainTopics[i]->alfQueue.first : this->topic->chainTopics[i]->alfQueue.second;
         queue->newRequest(make_pair(processMessage, this->topic->chainTopics[i]));
     }
 

@@ -7,6 +7,7 @@
 #include "Fred/Mapi/mapi.h"
 #include "Fred/Mapi/iterativemapi.h"
 #include "Fred/Mapi/mapigroup.h"
+#include "Fred/Config/location.h"
 
 using namespace std;
 
@@ -24,6 +25,8 @@ private:
     GroupCommand* groupCommand;
     Mapi* mapi;
     bool useCru;
+    Location::AlfEntry::Version alfVersion;
+
 
     bool checkMessage(string& message);
 
@@ -32,9 +35,9 @@ public:
 
     void parseInputVariables(string& line, vector<string>& inVars, int32_t iteration);
 
-    ProcessMessage(string message, int32_t placeId, bool useCru);
-    ProcessMessage(map<string, vector<double> > inVars, int32_t placeId, GroupCommand* groupCommand, bool useCru);
-    ProcessMessage(Mapi* mapi, string input, bool useCru);
+    ProcessMessage(string message, int32_t placeId, bool useCru, Location::AlfEntry::Version alfVersion);
+    ProcessMessage(map<string, vector<double> > inVars, int32_t placeId, GroupCommand* groupCommand, bool useCru, Location::AlfEntry::Version alfVersion);
+    ProcessMessage(Mapi* mapi, string input, bool useCru, Location::AlfEntry::Version alfVersion);
     int32_t getMultiplicity();
     bool isCorrect();
     vector<vector<unsigned long> > readbackValues(const string &message, Instructions::Instruction& instructions);
@@ -49,6 +52,7 @@ public:
     void updateResponse(ChainTopic& chainTopic, string response, bool error);
     vector<string>* getPollPattern();
     bool getUseCru();
+    Location::AlfEntry::Version getAlfVersion();
 };
 
 #endif // PROCESSMESSAGE_H

@@ -1,10 +1,8 @@
 #include "Fred/llalock.h"
 #include <unistd.h>
 
-LlaLock::LlaLock(const string& alf, int32_t serial, uint32_t repeat, uint32_t delay, vector<Queue*> queues, Fred* fred)
+LlaLock::LlaLock(const string& alf, int32_t serial, int32_t endpoint, uint32_t repeat, uint32_t delay, vector<Queue*> queues, Fred* fred)
 {
-    this->alf = alf;
-    this->serial = serial;
     this->repeat = repeat;
     this->delay = delay;
     this->queues = queues;
@@ -12,8 +10,9 @@ LlaLock::LlaLock(const string& alf, int32_t serial, uint32_t repeat, uint32_t de
     this->hasLlaSession = false;
     this->overridenSession = false;
 
-    this->startLla = dynamic_cast<LlaAlfRpcInfo*>(this->fred->GetRpcInfo(this->alf + "/SERIAL_" + to_string(this->serial) + "/LLA_SESSION_START"));
-    this->stopLla = dynamic_cast<LlaAlfRpcInfo*>(this->fred->GetRpcInfo(this->alf + "/SERIAL_" + to_string(this->serial) + "/LLA_SESSION_STOP"));
+    string endpointStr = endpoint == -1 ? "" : ("/ENDPOINT_" + to_string(endpoint));
+    this->startLla = dynamic_cast<LlaAlfRpcInfo*>(this->fred->GetRpcInfo(alf + "/SERIAL_" + to_string(serial) + endpointStr + "/LLA_SESSION_START"));
+    this->stopLla = dynamic_cast<LlaAlfRpcInfo*>(this->fred->GetRpcInfo(alf + "/SERIAL_" + to_string(serial) + endpointStr + "/LLA_SESSION_STOP"));
 }
 
 bool LlaLock::startLlaSession()

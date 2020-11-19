@@ -23,7 +23,6 @@ public:
     static void printVector(const vector<int32_t>& data);
     static double calculateEquation(string& equation, vector<string>& variables, vector<double>& values);
     static string readbackToString(vector<double> data);
-    static vector<unsigned long> splitAlfResponse(const string &message, Instructions::Type type);
     static void checkMessageIntegrity(const string& request, const string& response, Instructions::Type type);
     static uint128_t stringToLargeNumber(const string& number);
     static uint32_t stringToNumber(const string& number);

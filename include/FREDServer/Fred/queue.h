@@ -18,7 +18,7 @@ class LlaLock;
 class Queue
 {
 public:
-    Queue(string alfId, int32_t serial, int32_t link, Fred* fred);
+    Queue(Fred* fred);
     ~Queue();
 
     void newRequest(pair<ProcessMessage *, ChainTopic *> request);
@@ -29,7 +29,6 @@ public:
     bool processing();
 
 private:
-    string id;
     Fred* fred;
     condition_variable conditionVar;
     thread* queueThread;

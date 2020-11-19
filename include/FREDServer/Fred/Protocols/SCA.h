@@ -18,7 +18,7 @@ public:
     static vector<vector<unsigned long> > readbackValues(const string& message, const vector<string>& outputPattern, Instructions::Instruction& instructions);
     static uint32_t getReturnWidth();
     static string valuesToString(vector<vector<unsigned long> > values, int32_t multiplicity);
-    static void SCApad(string& line);
+    static bool SCApad(string& line);
 };
 
 #endif // SCA_H

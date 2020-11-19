@@ -5,7 +5,7 @@ project(FREDServer)
 include_directories(include/FREDServer include include/occi)
 
 if (APPLE)
-    link_directories(/usr/local/lib)
+    link_directories(/usr/local/lib /usr/local/lib/occi)
 else ()
     link_directories(lib)
 endif ()
@@ -65,9 +65,14 @@ file(GLOB SOURCES "src/main.cpp"
         "src/Fred/Protocols/SCA.cpp"
         "src/Fred/Protocols/SWT.cpp"
         "src/Fred/Protocols/IC.cpp"
+        "src/Fred/Protocols/CRORC.cpp"
 		"src/Fred/Database/databaseinterface.cpp"
 		"src/Fred/Database/multitype.cpp"
 	)
 
 add_executable(FREDServer ${SOURCES})
-target_link_libraries(FREDServer Alfred clntsh occi clntshcore nnz19 ociicus)
+if (APPLE)
+    target_link_libraries(FREDServer Alfred clntsh occi clntshcore nnz19)
+else ()
+    target_link_libraries(FREDServer Alfred clntsh occi clntshcore nnz19 ociicus)
+endif ()

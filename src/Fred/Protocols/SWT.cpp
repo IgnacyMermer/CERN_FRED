@@ -9,6 +9,9 @@
 #include "Fred/Config/instructions.h"
 #include "Fred/Protocols/SWT.h"
 
+const string SWT::swtResetWord_v0 = "reset";
+const string SWT::swtResetWord_v1 = "sc_reset";
+
 void SWT::SWTpad(string& line)
 {
 	stringstream ss;
@@ -28,8 +31,10 @@ vector<string> SWT::generateMessage(Instructions::Instruction& instructions, vec
 	int32_t multiplicity = processMessage->getMultiplicity();
 	size_t messageSize = instructions.message.size();
 
+    string swtResetWord = (processMessage->getAlfVersion() == Location::AlfEntry::Version::v0 ? swtResetWord_v0 : swtResetWord_v1) + "\n";
+
 	vector<string> result;
-	string message = "reset\n";
+    string message = swtResetWord;
 
 	for (int32_t m = 0; m < multiplicity; m++)
 	{
@@ -56,10 +61,10 @@ vector<string> SWT::generateMessage(Instructions::Instruction& instructions, vec
 				{
 					result.push_back(message.erase(message.size() - 1));
 					pollPattern.push_back("");
-					message = "reset\n";
+                    message = swtResetWord;
 				}
 
-				result.push_back("reset\n" + line);
+                result.push_back(swtResetWord + line);
 				pollPattern.push_back(pollEqn);
 
 				continue;
@@ -79,6 +84,31 @@ vector<string> SWT::generateMessage(Instructions::Instruction& instructions, vec
 				outputPattern.push_back(outVar);
 
 			}
+            else if (line.find("wait") != string::npos)
+            {
+                int32_t waitVal = 3;
+
+                vector<string> wait = Utility::splitString(line, ",");
+                if (wait.size() == 2)
+                {
+                    try
+                    {
+                        waitVal = stoi(wait[0]);
+                    }
+                    catch (invalid_argument& e)
+                    {
+                        throw runtime_error("SWT invalid wait value");
+                    }
+
+                    if (waitVal <= 0)
+                    {
+                        throw runtime_error("SWT invalid wait value");
+                    }
+                }
+
+                line = to_string(waitVal) + ",wait";
+                outputPattern.push_back("");
+            }
 			else //user write
 			{
 				outputPattern.push_back("");
@@ -112,7 +142,8 @@ void SWT::checkIntegrity(const string& request, const string& response)
 	vector<string> reqVec = Utility::splitString(request, "\n");
 	vector<string> resVec = Utility::splitString(response, "\n");
 
-	reqVec.erase(remove(reqVec.begin(), reqVec.end(), "reset"), reqVec.end()); //remove reset's
+    reqVec.erase(remove(reqVec.begin(), reqVec.end(), swtResetWord_v0), reqVec.end()); //remove reset's
+    reqVec.erase(remove(reqVec.begin(), reqVec.end(), swtResetWord_v1), reqVec.end()); //remove reset's
 
 	if (reqVec.size() != resVec.size())
 	{
@@ -123,6 +154,22 @@ void SWT::checkIntegrity(const string& request, const string& response)
 	{
 		transform(reqVec[i].begin(), reqVec[i].end(), reqVec[i].begin(), ::tolower);
 		transform(resVec[i].begin(), resVec[i].end(), resVec[i].begin(), ::tolower);
+
+        if (reqVec[i].find("wait") != string::npos)
+        {
+            vector<string> wait = Utility::splitString(reqVec[i], ",");
+            if (wait.size() != 2)
+            {
+                throw runtime_error("SWT: Invalid wait request!");
+            }
+
+            if (wait[0] != resVec[i])
+            {
+                throw runtime_error("SWT: Error on SWT wait operation!");
+            }
+
+            continue;
+        }
 
 		if (resVec[i].length() != (SWT_HIGH_WIDTH + strlen("0x")) && (resVec[i].length() != strlen("0")))
 		{

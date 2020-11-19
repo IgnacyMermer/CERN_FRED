@@ -15,14 +15,34 @@ public:
     
     struct AlfEntry
     {
+        enum Version
+        {
+            v0, //without endpoint
+            v1 //with endpoint
+        };
+
         struct SerialEntry
         {
+            enum CardType
+            {
+                CRU,
+                CRORC
+            };
+
+            struct EndpointEntry
+            {
+                int32_t id; //ENDPOINT_ID
+                vector<int32_t> links;
+            };
+
             int32_t id; //SERIAL_ID
-            vector<int32_t> links;
+            map<int32_t, EndpointEntry> endpoints;
+            CardType cardType;
         };
 
         string id; //ALF_ID
         map<int32_t, SerialEntry> serials;
+        Version version;
     };
 
 protected:
