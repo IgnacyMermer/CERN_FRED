@@ -9,16 +9,81 @@
 #include "Fred/Config/instructions.h"
 #include "Fred/Protocols/IC.h"
 
+void IC::ICpad(string& line)
+{
+    vector<string> icParts = Utility::splitString(line, ",");
+    if (icParts.size() != 1 && icParts.size() != 2)
+    {
+        throw runtime_error("IC command must have one or two parts!");
+    }
+
+    vector<uint64_t> icData;
+    for (size_t i = 0; i < icParts.size(); i++)
+    {
+        if (icParts[i].find("0x") == 0) icParts[i] = icParts[i].substr(2); //remove eventual "0x"
+        icData.push_back(stoull(icParts[i], NULL, 16));
+        if (*icData.end() > 0xffffffff)
+        {
+            throw runtime_error("IC 32 bits exceeded!");
+        }
+    }
+
+    stringstream ss;
+    ss << "0x" << setw(8) << setfill('0') << hex << icData[0];
+    if (icData.size() == 2)
+    {
+        ss << ",0x" << setw(8) << setfill('0') << hex << icData[1];
+        ss << ",write";
+    }
+    else
+    {
+        ss << ",read";
+    }
+
+    line = ss.str();
+}
+
 vector<string> IC::generateMessage(Instructions::Instruction& instructions, vector<string>& outputPattern, vector<string>& pollPattern, ProcessMessage* processMessage)
 {
-	string message;
-	for (size_t i = 0; i < instructions.message.size(); i++)
-    {
-		message += instructions.message[i]; //send raw sequence, parsing to be defined
-        message += "\n";
+    bool parseInVar = instructions.inVars.size() > 0;
 
+    int32_t multiplicity = processMessage->getMultiplicity();
+    size_t messageSize = instructions.message.size();
+
+    vector<string> result;
+    string message;
+
+    for (int32_t m = 0; m < multiplicity; m++)
+    {
+        for (size_t i = 0; i < messageSize; i++)
+        {
+            string outVar;
+            string line = instructions.message[i]; //add raw user line
+
+            if (parseInVar) processMessage->parseInputVariables(line, instructions.inVars, m); //parse invariables
+
+            size_t atPos = line.find('@');
+            if (atPos != string::npos) //user read @OUT_VAR
+            {
+                outVar = line.substr(atPos + 1);
+
+                line.erase(atPos); //remove @OUT_VAR
+
+                ICpad(line);
+
+                outputPattern.push_back(outVar);
+
+            }
+            else //user write
+            {
+                outputPattern.push_back("");
+
+                ICpad(line);
+            }
+            message += line + "\n";
+        }
     }
-    
+
     if (message.size())
     {
         message.erase(message.size() - 1);
@@ -29,18 +94,48 @@ vector<string> IC::generateMessage(Instructions::Instruction& instructions, vect
 
 void IC::checkIntegrity(const string& request, const string& response)
 {
-    //to be defined
+    for (size_t i = 0; i < response.size(); i++)
+    {
+        if (!(isxdigit(response[i]) || response[i] == '\n' || response[i] == 'x'))
+        {
+            throw runtime_error("IC: Invalid character received in RPC data:\n" + response + "\n");
+        }
+    }
+
+    vector<string> reqVec = Utility::splitString(request, "\n");
+    vector<string> resVec = Utility::splitString(response, "\n");
+
+    if (reqVec.size() != resVec.size())
+    {
+        throw runtime_error("IC: Invalid number of lines received!");
+    }
 }
 
 vector<vector<unsigned long> > IC::readbackValues(const string& message, const vector<string>& outputPattern, Instructions::Instruction& instructions)
 {
-    vector<vector<unsigned long> > results;
-    //to be defined
+    vector<string>& vars = instructions.vars;
+    vector<string> splitted = Utility::splitString(message, "\n");
+
+    vector<unsigned long> values;
+    for (size_t i = 0; i < splitted.size(); i++)
+    {
+        values.push_back(stoul(splitted[i].substr(splitted[i].size() - IC::getReturnWidth()), NULL, 16)); //last 8
+    }
+
+    vector<vector<unsigned long> > results(vars.size(), vector<unsigned long>());
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        if (outputPattern[i] != "") //if there is an outvar in the request line
+        {
+            size_t id = distance(vars.begin(), find(vars.begin(), vars.end(), outputPattern[i]));
+            results[id].push_back(values[i]);
+        }
+    }
+
     return results;
 }
 
 uint32_t IC::getReturnWidth()
 {
-    //to be defined
-    return 4;
+    return 8;
 }

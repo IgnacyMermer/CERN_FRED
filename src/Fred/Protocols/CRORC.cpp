@@ -12,7 +12,7 @@
 void CRORC::CRORCpad(string& line)
 {
     vector<string> crorcParts = Utility::splitString(line, ",");
-    if (crorcParts.size() != 1 || crorcParts.size() != 2)
+    if (crorcParts.size() != 1 && crorcParts.size() != 2)
     {
         throw runtime_error("CRORC command must have one or two parts!");
     }
@@ -20,7 +20,7 @@ void CRORC::CRORCpad(string& line)
     vector<uint64_t> crorcData;
     for (size_t i = 0; i < crorcParts.size(); i++)
     {
-        if (crorcParts[i].find("0x")) crorcParts[i] = crorcParts[i].substr(2); //remove eventual "0x"
+        if (crorcParts[i].find("0x") == 0) crorcParts[i] = crorcParts[i].substr(2); //remove eventual "0x"
         crorcData.push_back(stoull(crorcParts[i], NULL, 16));
         if (*crorcData.end() > 0xffffffff)
         {
