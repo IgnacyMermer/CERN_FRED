@@ -48,6 +48,7 @@ dimclient:
 build:
   stage: build
   script:
+  - yum install -y libaio
   - source scl_source enable devtoolset-7 || true
   - cmake3 .
   - make all
