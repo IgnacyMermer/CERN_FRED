@@ -1,5 +1,8 @@
 #!/bin/bash
 
+ls -l /usr/lib64/libaio*
+ls -l /usr/lib/libaio*
+
 export LD_LIBRARY_PATH=/usr/lib64:/usr/lib:$LD_LIBRARY_PATH
 
 echo "Parser test Bash script started"
