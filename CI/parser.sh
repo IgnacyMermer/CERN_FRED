@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export LD_LIBRARY_PATH=/usr/lib64:/usr/lib:$LD_LIBRARY_PATH
+
 echo "Parser test Bash script started"
 
 cp -r ./examples/config/ .
