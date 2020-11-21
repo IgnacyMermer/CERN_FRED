@@ -60,6 +60,7 @@ build:
 parser:
   stage: parser
   script:
+  - yum install -y libaio
   - ./CI/run_dns.sh
   - sleep 10
   - ./CI/parser.sh
@@ -67,6 +68,7 @@ parser:
 run:
   stage: run
   script:
+  - yum install -y libaio
   - ./CI/run_dns.sh
   - sleep 10
   - ./CI/run_alfdummies.sh
