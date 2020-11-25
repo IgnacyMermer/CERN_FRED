@@ -1,6 +1,12 @@
 # FREDServer
 
 ## Version History
+* v2.2 - New features:
+  - LLA support:
+    - LLA_MAPPING block in .section or .cru files
+    - LLA parameters = repeat, delay (defaults: 1, 0)
+  - Database interface (intended for standard dddfero schemas)
+  - CANALF support
 * v2.1 - Adds new features:
   - SCA: "n,wait" line instructs ALF to pause between SCA instructions, where n is an integer in milliseconds
   - CRU_MAPPING block added to .section files. See: 'examples/CRU'. Adds:

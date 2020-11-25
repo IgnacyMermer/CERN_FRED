@@ -13,7 +13,7 @@ Averagetemp::Averagetemp()
 
 string Averagetemp::processInputMessage(string input)
 {
-	PrintInfo(input + " remaining queries");
+	Print::PrintInfo(input + " remaining queries");
 	counter = stoi(input);	
 
 	if (input == "test")
@@ -40,11 +40,11 @@ string Averagetemp::processOutputMessage(string output)
 		value = output.substr(output.size() - 4, output.size());
 		temp = stoi(value, nullptr, 16);
 
-		PrintInfo("Temperature: " + to_string(temp));
+		Print::PrintInfo("Temperature: " + to_string(temp));
 	}
 	catch (exception& e)
 	{
-		PrintError("ERROR!");
+		Print::PrintError("ERROR!");
 		returnError = true;
 		return "ERROR!";
 	}

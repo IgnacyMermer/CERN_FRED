@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <unistd.h>
 #include "Mapi/testgroup.h"
-#include "Alfred/print.h"
 #include "Parser/utility.h"
 
 Testgroup::Testgroup()
