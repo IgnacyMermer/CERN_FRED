@@ -1,6 +1,9 @@
 # FREDServer
 
 ## Version History
+* v2.3 - Changes:
+  - Adds support for new ALF naming convention (backwards compatibility maintained)
+  - Adds support for CRORC
 * v2.2 - New features:
   - LLA support:
     - LLA_MAPPING block in .section or .cru files
