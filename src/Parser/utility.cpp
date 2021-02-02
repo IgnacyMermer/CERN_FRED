@@ -13,6 +13,7 @@
 #include "Fred/Protocols/SCA.h"
 #include "Fred/Protocols/SWT.h"
 #include "Fred/Protocols/IC.h"
+#include "Fred/Protocols/CRORC.h"
 
 vector<double> Utility::splitString2Num(const string &text, string by)
 {
@@ -157,38 +158,6 @@ string Utility::readbackToString(vector<double> data)
     return result;
 }
 
-vector<unsigned long> Utility::splitAlfResponse(const string& message, Instructions::Type type)
-{
-    vector<string> splitted = splitString(message, "\n");
-    vector<unsigned long> result;
-
-    for (size_t i = 0; i < splitted.size(); i++)
-    {
-        if (type == Instructions::Type::SCA)
-        {
-            size_t pos = splitted[i].find(",");
-            if (pos != string::npos)
-            {
-                result.push_back(stoul(splitted[i].substr(pos + 1), NULL, 16)); //return the 32 bits payload
-            }
-        }
-        else if (type == Instructions::Type::SWT)
-        {
-            result.push_back(stoul(splitted[i].size() > 4 ? splitted[i].substr(splitted[i].size() - 4) : splitted[i], NULL, 16)); //return last 16 bits
-        }
-        else if (type == Instructions::Type::IC)
-        {
-            size_t pos = splitted[i].find(",");
-            if (pos != string::npos)
-            {
-                result.push_back(stoul(splitted[i].substr(pos + 1), NULL, 16)); //return the 32 bits payload
-            }
-        }
-    }
-
-    return result;
-}
-
 void Utility::checkMessageIntegrity(const string& request, const string& response, Instructions::Type type)
 {
     try
@@ -200,6 +169,8 @@ void Utility::checkMessageIntegrity(const string& request, const string& respons
             case Instructions::Type::SCA: SCA::checkIntegrity(request, response);
                 break;
             case Instructions::Type::IC: IC::checkIntegrity(request, response);
+                break;
+            case Instructions::Type::CRORC: CRORC::checkIntegrity(request, response);
                 break;
         }
     }

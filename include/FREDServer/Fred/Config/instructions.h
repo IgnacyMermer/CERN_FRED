@@ -16,7 +16,8 @@ public:
     {
         SCA,
         SWT,
-        IC
+        IC,
+        CRORC
     };
 
     struct Instruction

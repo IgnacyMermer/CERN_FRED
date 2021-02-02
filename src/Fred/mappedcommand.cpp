@@ -4,6 +4,7 @@
 #include "Fred/fredtopics.h"
 #include "Fred/queue.h"
 #include "Fred/Mapi/indefinitemapi.h"
+#include "Fred/alfrpcinfo.h"
 
 MappedCommand::MappedCommand(string name, Fred* fred, ChainTopic *topic, int32_t placeId): CommandString::CommandString(name, (ALFRED*)fred)
 {
@@ -28,22 +29,22 @@ const void* MappedCommand::Execution(void *value)
 
     Print::PrintVerbose(name, "Received command: \n" + request);
 
+    AlfRpcInfo* alfRpcInfo = this->useCru ? this->topic->alfLink.first : this->topic->alfLink.second;
+    if (alfRpcInfo == NULL)
+    {
+        string error = "Required ALF/CANALF not available!";
+        Print::PrintError(name, error);
+        topic->error->Update(error);
+        Print::PrintError(topic->name, "Updating error service!");
+        return NULL;
+    }
+
     if (topic->mapi == NULL)
     {
-        ProcessMessage* processMessage = new ProcessMessage(request, this->placeId, this->useCru);
+        ProcessMessage* processMessage = new ProcessMessage(request, this->placeId, this->useCru, alfRpcInfo->getVersion());
         if (processMessage->isCorrect())
         {
             Queue* queue = this->useCru ? this->topic->alfQueue.first : this->topic->alfQueue.second;
-            if (!queue)
-            {
-                string error = "Required ALF/CANALF not available!";
-                Print::PrintError(name, error);
-                topic->error->Update(error);
-                Print::PrintError(topic->name, "Updating error service!");
-                delete processMessage;
-                return NULL;
-            }
-
             queue->newRequest(make_pair(processMessage, this->topic));
         }
         else
@@ -59,19 +60,9 @@ const void* MappedCommand::Execution(void *value)
     {
         if (!this->topic->mapi->customMessageProcess())
         {
-            ProcessMessage* processMessage = new ProcessMessage(topic->mapi, request, this->useCru);
+            ProcessMessage* processMessage = new ProcessMessage(topic->mapi, request, this->useCru, alfRpcInfo->getVersion());
 
             Queue* queue = this->useCru ? this->topic->alfQueue.first : this->topic->alfQueue.second;
-            if (!queue)
-            {
-                string error = "Required ALF/CANALF not available!";
-                Print::PrintError(name, error);
-                topic->error->Update(error);
-                Print::PrintError(topic->name, "Updating error service!");
-                delete processMessage;
-                return NULL;
-            }
-
             queue->newRequest(make_pair(processMessage, this->topic));
         }
         else

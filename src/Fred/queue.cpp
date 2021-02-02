@@ -4,9 +4,8 @@
 #include "Alfred/print.h"
 #include "Fred/llalock.h"
 
-Queue::Queue(string alfId, int32_t serial, int32_t link, Fred* fred)
+Queue::Queue(Fred* fred)
 {
-    this->id = alfId + "/SERIAL_" + to_string(serial) + "/LINK_" + to_string(link);
     this->fred = fred;
     this->isFinished = false;
     this->isProcessing = false;

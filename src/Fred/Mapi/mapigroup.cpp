@@ -6,6 +6,7 @@
 #include "Fred/fred.h"
 #include "Alfred/print.h"
 #include "Parser/processmessage.h"
+#include "Fred/alfrpcinfo.h"
 
 /*
  * Send a new request to a group of MAPI topic 
@@ -27,17 +28,17 @@ void Mapigroup::newMapiGroupRequest(vector<pair<string, string> > requests)
         {
             ChainTopic& mapi = map[requests[i].first];
             bool useCru = dynamic_cast<MappedCommand*>(mapi.command)->getUseCru();
-            ProcessMessage* processMessage = new ProcessMessage(mapi.mapi, requests[i].second, useCru);
-            Queue* queue = useCru ? mapi.alfQueue.first : mapi.alfQueue.second;
-            if (!queue)
+            AlfRpcInfo* alfRpcInfo = useCru ? mapi.alfLink.first : mapi.alfLink.second;
+            if (alfRpcInfo == NULL)
             {
                 string error = "Required ALF/CANALF not available!";
                 Print::PrintError(name, error);
                 thisMapi->error->Update(error);
-                delete processMessage;
                 return;
             }
 
+            ProcessMessage* processMessage = new ProcessMessage(mapi.mapi, requests[i].second, useCru, alfRpcInfo->getVersion());
+            Queue* queue = useCru ? mapi.alfQueue.first : mapi.alfQueue.second;
             queue->newRequest(make_pair(processMessage, &mapi));
         }
     }
@@ -66,17 +67,17 @@ void Mapigroup::newTopicGroupRequest(vector<pair<string, string> > requests)
             int32_t placeId = map[requests[i].first].placeId;
 
             bool useCru = dynamic_cast<MappedCommand*>(topic.command)->getUseCru();
-            ProcessMessage* processMessage = new ProcessMessage(requests[i].second, placeId, useCru);
-            Queue* queue = useCru ? topic.alfQueue.first : topic.alfQueue.second;
-            if (!queue)
+            AlfRpcInfo* alfRpcInfo = useCru ? topic.alfLink.first : topic.alfLink.second;
+            if (alfRpcInfo == NULL)
             {
                 string error = "Required ALF/CANALF not available!";
                 Print::PrintError(name, error);
                 thisMapi->error->Update(error);
-                delete processMessage;
                 return;
             }
 
+            ProcessMessage* processMessage = new ProcessMessage(requests[i].second, placeId, useCru, alfRpcInfo->getVersion());
+            Queue* queue = useCru ? topic.alfQueue.first : topic.alfQueue.second;
             queue->newRequest(make_pair(processMessage, &topic));
         }
     }

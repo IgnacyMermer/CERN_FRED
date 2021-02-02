@@ -24,7 +24,7 @@ void Mapping::processUnit(string& left, string& right)
 
     if (leftBr == string::npos || rightBr == string::npos || rightBr <= leftBr)
     {
-        throw new runtime_error("Unit IDs have to be specified in brackets");
+        throw runtime_error("Unit IDs have to be specified in brackets");
     }
 
     string name = left.substr(0, leftBr) + MAPPING_UNIT_DELIMITER + left.substr(rightBr + 1);
@@ -42,22 +42,58 @@ void Mapping::processUnit(string& left, string& right)
     vector<string> paths = Utility::splitString(right, ",");
     for (size_t i = 0; i < paths.size(); i++)
     {
+        AlfEntry::SerialEntry::CardType cardType = AlfEntry::SerialEntry::CardType::CRU;
+        size_t leftBr = paths[i].find("(");
+        size_t rightBr = paths[i].find(")");
+        if (leftBr == 0 && rightBr != string::npos)
+        {
+            string cardTypeName = paths[i].substr(leftBr + 1, rightBr - leftBr - 1);
+            if (cardTypeName == "CRU")
+            {
+                cardType = AlfEntry::SerialEntry::CardType::CRU;
+            }
+            else if (cardTypeName == "CRORC")
+            {
+                cardType = AlfEntry::SerialEntry::CardType::CRORC;
+            }
+            else
+            {
+                throw runtime_error("Unknown card type: " + cardTypeName);
+            }
+
+            paths[i] = paths[i].substr(rightBr + 1);
+        }
+
         vector<string> path = Utility::splitString(paths[i], "/");
-        if (path.size() == 3)
+        if (path.size() == 3 || path.size() == 4)
         {
             Unit::Alf alf;
+            alf.version = path.size() == 3 ? AlfEntry::Version::v0 : AlfEntry::Version::v1;
             alf.alfId = path[0]; //ALF_x
             alf.serialId = stoi(path[1].substr(path[1].find("_") + 1)); //SERIAL_x
-            alf.linkId = stoi(path[2].substr(path[2].find("_") + 1)); //LINK_x
+            if (alf.version == AlfEntry::Version::v0)
+            {
+                alf.endpointId = -1;
+                alf.linkId = stoi(path[2].substr(path[2].find("_") + 1)); //LINK_x
+            }
+            else
+            {
+                alf.endpointId = stoi(path[2].substr(path[2].find("_") + 1)); //ENDPOINT_x
+                alf.linkId = stoi(path[3].substr(path[3].find("_") + 1)); //LINK_x
+            }
 
             if (path[0].find("ALF") == 0)
             {
-                processLocation(alf.alfId, alf.serialId, alf.linkId);
+                processLocation(alf.alfId, alf.serialId, alf.endpointId, alf.linkId, cardType);
                 unit.alfs.first = alf;
             }
             else if (path[0].find("CANALF") == 0)
             {
-                processLocation(alf.alfId, alf.serialId, alf.linkId);
+                if (alf.version == AlfEntry::Version::v1)
+                {
+                    throw runtime_error("CANALF doesn't have an endpoint");
+                }
+                processLocation(alf.alfId, alf.serialId, alf.endpointId, alf.linkId, AlfEntry::SerialEntry::CardType::CRU);
                 unit.alfs.second = alf;
             }
         }
@@ -66,33 +102,65 @@ void Mapping::processUnit(string& left, string& right)
     units.push_back(unit);
 }
 
-void Mapping::processLocation(string alfId, int32_t serialId, int32_t linkId)
+void Mapping::processLocation(string alfId, int32_t serialId, int32_t endpointId, int32_t linkId, AlfEntry::SerialEntry::CardType cardType)
 {
     if (!alfs.count(alfId)) //new ALF
     {
+        AlfEntry::SerialEntry::EndpointEntry endpointEntry;
+        endpointEntry.id = endpointId;
+        endpointEntry.links.push_back(linkId);
+
         AlfEntry::SerialEntry serialEntry;
         serialEntry.id = serialId;
-        serialEntry.links.push_back(linkId);
+        serialEntry.endpoints[endpointId] = endpointEntry;
+        serialEntry.cardType = cardType;
 
         AlfEntry NewAlfEntry;
         NewAlfEntry.id = alfId;
         NewAlfEntry.serials[serialId] = serialEntry;
+        NewAlfEntry.version = endpointId == -1 ? AlfEntry::Version::v0 : AlfEntry::Version::v1;
 
         alfs[alfId] = NewAlfEntry;
     }
     else //already existing ALF
     {
+        if ((endpointId == -1 ? AlfEntry::Version::v0 : AlfEntry::Version::v1) != alfs[alfId].version)
+        {
+            throw runtime_error("ALF_" + alfId + " - version mismatch");
+        }
+
         if (!alfs[alfId].serials.count(serialId)) //new serial
         {
+            AlfEntry::SerialEntry::EndpointEntry endpointEntry;
+            endpointEntry.id = endpointId;
+            endpointEntry.links.push_back(linkId);
+
             AlfEntry::SerialEntry NewSerialEntry;
             NewSerialEntry.id = serialId;
-            NewSerialEntry.links.push_back(linkId);
+            NewSerialEntry.endpoints[endpointId] = endpointEntry;
+            NewSerialEntry.cardType = cardType;
 
             alfs[alfId].serials[serialId] = NewSerialEntry;
         }
         else //already existing serial
         {
-            alfs[alfId].serials[serialId].links.push_back(linkId);
+            if (alfs[alfId].serials[serialId].cardType != cardType)
+            {
+                throw runtime_error("ALF_" + alfId + "/SERIAL_" + to_string(serialId) + " - card type mismatch");
+            }
+
+            if (!alfs[alfId].serials[serialId].endpoints.count(endpointId)) //new endpoint
+            {
+                AlfEntry::SerialEntry::EndpointEntry NewEndpointEntry;
+                NewEndpointEntry.id = endpointId;
+                NewEndpointEntry.links.push_back(linkId);
+
+                alfs[alfId].serials[serialId].endpoints[endpointId] = NewEndpointEntry;
+            }
+            else //already existing endpoint
+            {
+                alfs[alfId].serials[serialId].endpoints[endpointId].links.push_back(linkId);
+            }
         }
     }
 }

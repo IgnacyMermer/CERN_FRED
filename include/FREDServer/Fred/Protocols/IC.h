@@ -15,6 +15,7 @@ public:
     static void checkIntegrity(const string& request, const string& response);
     static vector<vector<unsigned long> > readbackValues(const string& message, const vector<string>& outputPattern, Instructions::Instruction& instructions);
     static uint32_t getReturnWidth();
+    static void ICpad(string& line);
 };
 
 #endif // IC_H

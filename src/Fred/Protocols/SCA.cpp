@@ -9,8 +9,18 @@
 #include "Fred/Config/instructions.h"
 #include "Fred/Protocols/SCA.h"
 
-void SCA::SCApad(string& line)
+bool SCA::SCApad(string& line)
 {
+    if (line == "svl_connect")
+    {
+        return true;
+    }
+
+    if (line == "svl_reset" || line == "sc_reset")
+    {
+        return false;
+    }
+
     vector<string> scaParts = Utility::splitString(line, ",");
     if (scaParts.size() != 2)
     {
@@ -36,7 +46,7 @@ void SCA::SCApad(string& line)
         }
 
         line = to_string(wait) + ",wait";
-        return;
+        return true;
     }
 
     uint64_t command = stoull(scaParts[0], NULL, 16);
@@ -49,6 +59,7 @@ void SCA::SCApad(string& line)
     stringstream ss;
     ss << "0x" << setw(8) << setfill('0') << hex << command << "," << "0x" << setw(8) << setfill('0') << hex << data;
     line = ss.str();
+    return true;
 }
 
 vector<string> SCA::generateMessage(Instructions::Instruction& instructions, vector<string>& outputPattern, vector<string>& pollPattern, ProcessMessage* processMessage)
@@ -99,9 +110,10 @@ vector<string> SCA::generateMessage(Instructions::Instruction& instructions, vec
                 line.erase(atPos); //remove @OUT_VAR
             }
 
-            SCApad(line);
-
-            outputPattern.push_back(outVars); //push_back outvar name, empty string if not present
+            if (SCApad(line))
+            {
+                outputPattern.push_back(outVars); //push_back outvar name, empty string if not present
+            }
             message += line + "\n";
         }
     }
@@ -117,9 +129,14 @@ vector<string> SCA::generateMessage(Instructions::Instruction& instructions, vec
 
 void SCA::checkIntegrity(const string& request, const string& response)
 {
-    for (size_t i = 0; i < response.size(); i++)
+    string responseTemp = response;
+    while (responseTemp.find("svl_connect") != string::npos)
     {
-        if (!(isxdigit(response[i]) || response[i] == '\n' || response[i] == ',' || response[i] == 'x'))
+        responseTemp.erase(responseTemp.find("svl_connect"), strlen("svl_connect"));
+    }
+    for (size_t i = 0; i < responseTemp.size(); i++)
+    {
+        if (!(isxdigit(responseTemp[i]) || responseTemp[i] == '\n' || responseTemp[i] == ',' || responseTemp[i] == 'x'))
         {
             throw runtime_error("SCA: Invalid character received in RPC data:\n" + response + "\n");
         }
@@ -127,6 +144,9 @@ void SCA::checkIntegrity(const string& request, const string& response)
 
     vector<string> reqVec = Utility::splitString(request, "\n");
     vector<string> resVec = Utility::splitString(response, "\n");
+
+    reqVec.erase(remove(reqVec.begin(), reqVec.end(), "svl_reset"), reqVec.end()); //remove reset's
+    reqVec.erase(remove(reqVec.begin(), reqVec.end(), "sc_reset"), reqVec.end()); //remove reset's
 
     if (reqVec.size() != resVec.size())
     {
@@ -137,6 +157,11 @@ void SCA::checkIntegrity(const string& request, const string& response)
     {
         transform(reqVec[i].begin(), reqVec[i].end(), reqVec[i].begin(), ::tolower);
         transform(resVec[i].begin(), resVec[i].end(), resVec[i].begin(), ::tolower);
+
+        if (reqVec[i] == "svl_connect" && resVec[i] == reqVec[i])
+        {
+            continue;
+        }
 
         vector<string> scaPartsReq = Utility::splitString(reqVec[i], ",");
         vector<string> scaPartsRes = Utility::splitString(resVec[i], ",");
