@@ -14,7 +14,11 @@ ALFRED::ALFRED(string server, string dns, bool parseOnly, string network)
 	this->dns = dns;
 	this->network = network;
 
-	setenv("DIM_HOST_NODE", network == "" ? GetHost().c_str() : GetIP().c_str(), 1);
+	if (getenv("DIM_HOST_NODE") == NULL || strcmp(getenv("DIM_HOST_NODE"),"") == 0)
+	{
+		setenv("DIM_HOST_NODE", network == "" ? GetHost().c_str() : GetIP().c_str(), 1);
+	}
+
     setenv("DIM_DNS_NODE", dns.c_str(), 1);
 
     if (!parseOnly) // do not check DIM DNS
