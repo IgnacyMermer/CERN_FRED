@@ -1,6 +1,7 @@
 # FREDServer
 
 ## Version History
+* v2.3.1 - Adds DIM_HOST_NODE environment variable support
 * v2.3 - Changes:
   - Adds support for new ALF naming convention (backwards compatibility maintained)
   - Adds support for CRORC
