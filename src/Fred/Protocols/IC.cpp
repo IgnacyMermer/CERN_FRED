@@ -22,17 +22,16 @@ void IC::ICpad(string& line)
     {
         if (icParts[i].find("0x") == 0) icParts[i] = icParts[i].substr(2); //remove eventual "0x"
         icData.push_back(stoull(icParts[i], NULL, 16));
-        if (*icData.end() > 0xffffffff)
-        {
-            throw runtime_error("IC 32 bits exceeded!");
-        }
     }
 
+    if (icData[0] > 0xffff) throw runtime_error("IC 16 bit address exceeded: 0x" + icParts[0]);
+    
     stringstream ss;
-    ss << "0x" << setw(8) << setfill('0') << hex << icData[0];
+    ss << "0x" << setw(4) << setfill('0') << hex << icData[0];
     if (icData.size() == 2)
     {
-        ss << ",0x" << setw(8) << setfill('0') << hex << icData[1];
+        if (icData[1] > 0xff) throw runtime_error("IC 8 bit value exceeded: 0x" + icParts[1]);
+        ss << ",0x" << setw(2) << setfill('0') << hex << icData[1];
         ss << ",write";
     }
     else
