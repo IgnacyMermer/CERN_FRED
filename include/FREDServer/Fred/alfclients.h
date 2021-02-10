@@ -39,9 +39,9 @@ public:
     };
 
 private:
-    map<string, map<int32_t, map<int32_t, map<int32_t, Nodes> > > > clients;
-    map<string, map<int32_t, map<int32_t, CruNodes> > > cruClients;
-    map<string, map<int32_t, map<int32_t, LlaNodes> > > llaClients;
+    map<string, map<int32_t, map<int32_t, map<int32_t, Nodes> > > > clients; //ALF,SERIAL,ENDPOINT,LINK
+    map<string, map<int32_t, CruNodes> > cruClients; //ALF,SERIAL
+    map<string, map<int32_t, LlaNodes> > llaClients; //ALF,SERIAL
     Fred* fred;
 
 public:
@@ -55,9 +55,9 @@ public:
 
     AlfRpcInfo* getAlfNode(string alf, int32_t serial, int32_t endpoint, int32_t link, Instructions::Type type);
     Queue* getAlfQueue(string alf, int32_t serial, int32_t endpoint, int32_t link);
-    vector<Queue*> getAlfCruQueues(string alf, int32_t serial, int32_t endpoint);
+    vector<Queue*> getAlfCruQueues(string alf, int32_t serial);
 
-    CruAlfRpcInfo* getCruAlfNode(string alf, int32_t serial, int32_t endpoint, ALFRED_TYPES::CRU_TYPES type);
+    CruAlfRpcInfo* getCruAlfNode(string alf, int32_t serial, ALFRED_TYPES::CRU_TYPES type);
 
     vector<CruAlfRpcInfo*> getAllCruRpcs();
     vector<LlaAlfRpcInfo*> getAllLlaRpcs();
