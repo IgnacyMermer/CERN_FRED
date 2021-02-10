@@ -16,8 +16,7 @@ public:
         struct Alf
         {
             string alfId;
-            int32_t serialId, endpointId;
-            AlfEntry::Version version;
+            int32_t serialId;
         };
 
         string cruUnitName;
@@ -33,7 +32,7 @@ private:
     vector<CruUnit> cruUnits;
 
     void processCruUnit(string& left, string& right);
-    void processLocation(string alfId, int32_t serialId, int32_t endpointId);
+    void processLocation(string alfId, int32_t serialId);
 };
 
 #endif // CRUMAPPING_H
