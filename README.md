@@ -1,6 +1,10 @@
 # FREDServer
 
 ## Version History
+* v2.4 - Breaks backwards compatibility with ALF version < 0.14.0 (FLP Suite v0.18.0). Changes:
+  - FRED configuration files adjusted for changes in ALF services
+  - Added support for new CRU (User Space) Register_READ/WRITE services
+  - Tested compaitble ALF's parallel link access
 * v2.3.1 - Adds DIM_HOST_NODE environment variable support
 * v2.3 - Changes:
   - Adds support for new ALF naming convention (backwards compatibility maintained)
