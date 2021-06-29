@@ -14,6 +14,7 @@
 #include "Fred/Protocols/SWT.h"
 #include "Fred/Protocols/IC.h"
 #include "Fred/Protocols/CRORC.h"
+#include "Fred/Protocols/CRU.h"
 
 vector<double> Utility::splitString2Num(const string &text, string by)
 {
@@ -171,6 +172,8 @@ void Utility::checkMessageIntegrity(const string& request, const string& respons
             case Instructions::Type::IC: IC::checkIntegrity(request, response);
                 break;
             case Instructions::Type::CRORC: CRORC::checkIntegrity(request, response);
+                break;
+            case Instructions::Type::CRU: CRU::checkIntegrity(request, response);
                 break;
         }
     }

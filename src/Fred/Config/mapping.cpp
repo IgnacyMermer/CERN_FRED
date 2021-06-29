@@ -97,6 +97,28 @@ void Mapping::processUnit(string& left, string& right)
                 unit.alfs.second = alf;
             }
         }
+        else if (path.size() == 2) // CRU level
+        {
+            if (cardType != AlfEntry::SerialEntry::CardType::CRU)
+            {
+                throw runtime_error("CRORC doesn't have CRU level services");
+            }
+
+            Unit::Alf alf;
+            alf.version = AlfEntry::Version::v1;
+            alf.alfId = path[0]; //ALF_x
+            alf.serialId = stoi(path[1].substr(path[1].find("_") + 1)); //SERIAL_x
+            alf.endpointId = -1;
+            alf.linkId = -1;
+
+            if (path[0].find("ALF") != 0)
+            {
+                throw runtime_error("CANALF doesn't have CRU level services");
+            }
+
+            processLocation(alf.alfId, alf.serialId, alf.endpointId, alf.linkId, cardType);
+            unit.alfs.first = alf;
+        }
     }
 
     units.push_back(unit);
@@ -118,13 +140,13 @@ void Mapping::processLocation(string alfId, int32_t serialId, int32_t endpointId
         AlfEntry NewAlfEntry;
         NewAlfEntry.id = alfId;
         NewAlfEntry.serials[serialId] = serialEntry;
-        NewAlfEntry.version = endpointId == -1 ? AlfEntry::Version::v0 : AlfEntry::Version::v1;
+        NewAlfEntry.version = (endpointId == -1 && linkId != -1) ? AlfEntry::Version::v0 : AlfEntry::Version::v1;
 
         alfs[alfId] = NewAlfEntry;
     }
     else //already existing ALF
     {
-        if ((endpointId == -1 ? AlfEntry::Version::v0 : AlfEntry::Version::v1) != alfs[alfId].version)
+        if (((endpointId == -1 && linkId != -1) ? AlfEntry::Version::v0 : AlfEntry::Version::v1) != alfs[alfId].version)
         {
             throw runtime_error("ALF_" + alfId + " - version mismatch");
         }

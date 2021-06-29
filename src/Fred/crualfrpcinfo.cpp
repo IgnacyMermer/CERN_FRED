@@ -24,10 +24,11 @@ const void* CruAlfRpcInfo::Execution(void *value) //todo
 
     Print::PrintVerbose(this->name, "Received RPC Info:\n" + response);
 
-    if (this->type == ALFRED_TYPES::CRU_TYPES::READ && (response.find("success") != string::npos || response.find("failure") != string::npos))
+    // not supported
+    /*if (this->type == ALFRED_TYPES::CRU_TYPES::READ && (response.find("success") != string::npos || response.find("failure") != string::npos))
     {
         response.erase(0, response.find("\n") + 1);
-    }
+    }*/
 
     if (response.size() && response[response.size() - 1] == '\n')
     {

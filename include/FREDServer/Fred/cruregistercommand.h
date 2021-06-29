@@ -30,8 +30,8 @@ private:
 
     const void* Execution(void* value);
 
-    void executeWrite(vector<string>& message);
-    void executeRead(vector<string>& message);
+    //void executeWrite(vector<string>& message);
+    //void executeRead(vector<string>& message);
     void executePatternPlayer(vector<string>& message);
 
     condition_variable conditionVar;

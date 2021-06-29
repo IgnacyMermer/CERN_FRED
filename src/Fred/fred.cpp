@@ -173,8 +173,8 @@ void Fred::generateTopics()
         vector<CruMapping::CruUnit>& cruUnits = cruSections[i].cruMapping.getCruUnits();
         for (auto cruUnit = cruUnits.begin(); cruUnit != cruUnits.end(); cruUnit++)
         {
-            RegisterCommand(new CruRegisterCommand(ALFRED_TYPES::CRU_TYPES::WRITE, cruUnit->cruUnitName, alfClients.getCruAlfNode(cruUnit->alf.alfId, cruUnit->alf.serialId, ALFRED_TYPES::CRU_TYPES::WRITE), this));
-            RegisterCommand(new CruRegisterCommand(ALFRED_TYPES::CRU_TYPES::READ, cruUnit->cruUnitName, alfClients.getCruAlfNode(cruUnit->alf.alfId, cruUnit->alf.serialId, ALFRED_TYPES::CRU_TYPES::READ), this));
+            //RegisterCommand(new CruRegisterCommand(ALFRED_TYPES::CRU_TYPES::WRITE, cruUnit->cruUnitName, alfClients.getCruAlfNode(cruUnit->alf.alfId, cruUnit->alf.serialId, ALFRED_TYPES::CRU_TYPES::WRITE), this));
+            //RegisterCommand(new CruRegisterCommand(ALFRED_TYPES::CRU_TYPES::READ, cruUnit->cruUnitName, alfClients.getCruAlfNode(cruUnit->alf.alfId, cruUnit->alf.serialId, ALFRED_TYPES::CRU_TYPES::READ), this));
             RegisterCommand(new CruRegisterCommand(ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER, cruUnit->cruUnitName, alfClients.getCruAlfNode(cruUnit->alf.alfId, cruUnit->alf.serialId, ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER), this));
         }
     }

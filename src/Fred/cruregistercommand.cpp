@@ -41,7 +41,8 @@ const void* CruRegisterCommand::Execution(void *value)
 
     vector<string> splitted = Utility::splitString(request, ",");
 
-    if (this->type == ALFRED_TYPES::CRU_TYPES::WRITE)
+    // not supported
+    /*if (this->type == ALFRED_TYPES::CRU_TYPES::WRITE)
     {
         if (splitted.size() != 2)
         {
@@ -61,7 +62,7 @@ const void* CruRegisterCommand::Execution(void *value)
 
         executeRead(splitted);
     }
-    else if (this->type == ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER)
+    else */if (this->type == ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER)
     {
         if (splitted.size() != 11)
         {
@@ -75,7 +76,8 @@ const void* CruRegisterCommand::Execution(void *value)
     return NULL;
 }
 
-void CruRegisterCommand::executeWrite(vector<string>& message) // 0 - ADDR, 1 - VALUE
+// not supported
+/*void CruRegisterCommand::executeWrite(vector<string>& message) // 0 - ADDR, 1 - VALUE
 {
     stringstream request;
 
@@ -112,7 +114,7 @@ void CruRegisterCommand::executeRead(vector<string>& message) // 0 - ADDR
     }
 
     newRequest(make_pair(request.str(), rpcInfo));
-}
+}*/
 
 void CruRegisterCommand::executePatternPlayer(vector<string>& message) // 0 - SYNC_P, 1 - RESET_P, 2 - IDLE_P, 3 - SYNC_L, 4 - SYNC_D, 5 - RESET_L, 6 - RESET_TS, 7 - SYNC_TS, 8 - SYNC_S, 9 - TRIG_S, 10 - TRIG_R
 {
@@ -199,10 +201,10 @@ string CruRegisterCommand::getTypeReqName(ALFRED_TYPES::CRU_TYPES type, string t
 {
     switch (type)
     {
-    case ALFRED_TYPES::CRU_TYPES::READ:
-        return "/" + topicName + "/REGISTER_READ_" + suffix;
-    case ALFRED_TYPES::CRU_TYPES::WRITE:
-        return "/" + topicName + "/REGISTER_WRITE_" + suffix;
+    //case ALFRED_TYPES::CRU_TYPES::READ:
+    //    return "/" + topicName + "/REGISTER_READ_" + suffix;
+    //case ALFRED_TYPES::CRU_TYPES::WRITE:
+    //    return "/" + topicName + "/REGISTER_WRITE_" + suffix;
     case ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER:
         return "/" + topicName + "/PATTERN_PLAYER_" + suffix;
     }

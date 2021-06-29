@@ -69,20 +69,28 @@ void AlfClients::registerAlf(Location::AlfEntry &entry)
 
 AlfClients::Nodes AlfClients::createAlfInfo(string id, int32_t serial, int32_t endpoint, int32_t link, Location::AlfEntry::Version version, Location::AlfEntry::SerialEntry::CardType cardType)
 {
-    Nodes nodes = { .sca = NULL, .swt = NULL, .ic = NULL, .crorc = NULL, .queue = NULL };
+    Nodes nodes = { .sca = NULL, .swt = NULL, .ic = NULL, .crorc = NULL, .cru = NULL, .queue = NULL };
     string endpointStr = version == Location::AlfEntry::Version::v0 ? "" : ("/ENDPOINT_" + to_string(endpoint));
 
     if (cardType == Location::AlfEntry::SerialEntry::CardType::CRU)
     {
-        nodes.swt = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + endpointStr + "/LINK_" + to_string(link) + "/SWT_SEQUENCE", " ", this->fred, version);
-        this->fred->RegisterRpcInfo(nodes.swt);
-
-        if (id.find("ALF") == 0)
+        if (link != -1)
         {
-            nodes.sca = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + endpointStr + "/LINK_" + to_string(link) + "/SCA_SEQUENCE", " ", this->fred, version);
-            this->fred->RegisterRpcInfo(nodes.sca);
-            nodes.ic = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + endpointStr + "/LINK_" + to_string(link) + "/IC_SEQUENCE", " ", this->fred, version);
-            this->fred->RegisterRpcInfo(nodes.ic);
+            nodes.swt = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + endpointStr + "/LINK_" + to_string(link) + "/SWT_SEQUENCE", " ", this->fred, version);
+            this->fred->RegisterRpcInfo(nodes.swt);
+
+            if (id.find("ALF") == 0)
+            {
+                nodes.sca = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + endpointStr + "/LINK_" + to_string(link) + "/SCA_SEQUENCE", " ", this->fred, version);
+                this->fred->RegisterRpcInfo(nodes.sca);
+                nodes.ic = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + endpointStr + "/LINK_" + to_string(link) + "/IC_SEQUENCE", " ", this->fred, version);
+                this->fred->RegisterRpcInfo(nodes.ic);
+            }
+        }
+        else if (id.find("ALF") == 0) // CRU register sequence
+        {
+            nodes.cru = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + "/REGISTER_SEQUENCE", " ", this->fred, version);
+            this->fred->RegisterRpcInfo(nodes.cru);
         }
     }
     else if (cardType == Location::AlfEntry::SerialEntry::CardType::CRORC)
@@ -108,12 +116,8 @@ void AlfClients::registerCruAlf(Location::AlfEntry& entry)
         if (cruClients[entry.id].count(serial->first) == 0)
         {
             CruNodes cruNodes;
-            cruNodes.registerWrite = new CruAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/REGISTER_WRITE", this->fred, ALFRED_TYPES::CRU_TYPES::WRITE);
-            cruNodes.registerRead = new CruAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/REGISTER_READ", this->fred, ALFRED_TYPES::CRU_TYPES::READ);
             cruNodes.patternPlayer = new CruAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/PATTERN_PLAYER", this->fred, ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER);
 
-            this->fred->RegisterRpcInfo(cruNodes.registerWrite);
-            this->fred->RegisterRpcInfo(cruNodes.registerRead);
             this->fred->RegisterRpcInfo(cruNodes.patternPlayer);
 
             cruClients[entry.id][serial->first] = cruNodes;
@@ -169,6 +173,8 @@ AlfRpcInfo* AlfClients::getAlfNode(string alf, int32_t serial, int32_t endpoint,
             return nodes.ic;
         case Instructions::Type::CRORC:
             return nodes.crorc;
+        case Instructions::Type::CRU:
+            return nodes.cru;
     }
 
     return NULL;
@@ -206,10 +212,6 @@ CruAlfRpcInfo* AlfClients::getCruAlfNode(string alf, int32_t serial, ALFRED_TYPE
 
     switch (type)
     {
-    case ALFRED_TYPES::CRU_TYPES::WRITE:
-        return nodes.registerWrite;
-    case ALFRED_TYPES::CRU_TYPES::READ:
-        return nodes.registerRead;
     case ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER:
         return nodes.patternPlayer;
     }
@@ -225,8 +227,6 @@ vector<CruAlfRpcInfo*> AlfClients::getAllCruRpcs()
     {
         for (auto serial = alf->second.begin(); serial != alf->second.end(); serial++)
         {
-            rpcInfos.push_back(serial->second.registerWrite);
-            rpcInfos.push_back(serial->second.registerRead);
             rpcInfos.push_back(serial->second.patternPlayer);
         }
     }
