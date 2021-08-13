@@ -39,7 +39,7 @@ void Groups::processGroup(string& left, string& right, vector<string> &inVars)
 
     if (leftBr == string::npos || rightBr == string::npos || slash == string::npos || rightBr <= leftBr || slash <= rightBr)
     {
-        throw new runtime_error("Unit IDs have to be specified in brackets");
+        throw runtime_error("Unit IDs have to be specified in brackets");
     }
 
     string unitName = right.substr(0, leftBr) + MAPPING_UNIT_DELIMITER + right.substr(rightBr + 1, slash - rightBr - 1);
@@ -73,7 +73,7 @@ void Groups::calculateIds(Mapping& mapping, vector<string> masking)
 
         if (leftBr == string::npos || rightBr == string::npos || rightBr <= leftBr)
         {
-            throw new runtime_error("Mask IDs have to be specified in brackets");
+            throw runtime_error("Mask IDs have to be specified in brackets");
         }
 
         string name = masking[m].substr(0, leftBr) + MAPPING_UNIT_DELIMITER + masking[m].substr(rightBr + 1);

@@ -48,7 +48,7 @@ vector<string> Utility::splitString(const string& text, string by)
         if(index != string::npos)
         {
             result.push_back(temp.substr(0, index));
-            temp = temp.substr(index + 1);
+            temp = temp.substr(index + by.length());
         }
         else
         {

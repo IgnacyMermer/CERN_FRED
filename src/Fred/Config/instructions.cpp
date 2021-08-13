@@ -96,7 +96,7 @@ vector<string> Instructions::processConfigFile(string file)
                 }
                 else if (left == "MESSAGE")
                 {
-                    instruction.message.push_back(right);
+                    instruction.message = Utility::splitString(right, "\\n"); //allow usage of \n in MESSAGE part
                 }
                 else if (left == "FILE")
                 {

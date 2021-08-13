@@ -1,4 +1,5 @@
 #include "Database/databaseinterface.h"
+#include "Alfred/print.h"
 
 #include <iostream>
 
@@ -45,6 +46,7 @@ bool DatabaseInterface::connect()
         this->connection = NULL;
         DatabaseInterface::instance = NULL;
 
+        Print::PrintError("Databse error: " + exception.getMessage() + ", Code: " + to_string(exception.getErrorCode()));
         return false;
     }
 
