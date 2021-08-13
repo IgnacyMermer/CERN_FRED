@@ -28,8 +28,8 @@ namespace ALFRED_TYPES
 
     enum CRU_TYPES
     {
-      READ,
-      WRITE,
+      //READ, // old
+      //WRITE,
       PATTERN_PLAYER
     };
 

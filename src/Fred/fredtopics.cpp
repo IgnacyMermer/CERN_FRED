@@ -24,6 +24,15 @@ void FredTopics::registerUnit(string section, Mapping::Unit& unit, Instructions 
 
         for (auto topicName = instructions.getTopics().begin(); topicName != instructions.getTopics().end(); topicName++)
         {
+            if (instructions.getInstructions()[*topicName].type == Instructions::Type::CRU && (unit.alfs.first.alfId.empty() || unit.alfs.first.linkId != -1))
+            {
+                continue;
+            }
+            else if (instructions.getInstructions()[*topicName].type != Instructions::Type::CRU && !unit.alfs.first.alfId.empty() && unit.alfs.first.linkId == -1)
+            {
+                continue;
+            }
+
             string fullName = this->fred->Name() + "/" + section + "/" + unitName + "/" + *topicName;
 
             topics[fullName] = ChainTopic();
@@ -50,7 +59,7 @@ void FredTopics::registerUnit(string section, Mapping::Unit& unit, Instructions 
             topics[fullName].error = new ServiceString(fullName + "_ERR", this->fred);
             this->fred->RegisterService(topics[fullName].error);
 
-            if (!unit.alfs.second.alfId.empty() && topics[fullName].instruction->type == Instructions::Type::SWT)
+            if (!unit.alfs.first.alfId.empty() && !unit.alfs.second.alfId.empty() && topics[fullName].instruction->type == Instructions::Type::SWT)
             {
                 unitCommands.push_back((MappedCommand*)topics[fullName].command);
             }

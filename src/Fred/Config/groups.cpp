@@ -97,11 +97,12 @@ void Groups::calculateIds(Mapping& mapping, vector<string> masking)
             {
                 all.insert(all.end(), mapping.getUnits()[i].unitIds.begin(), mapping.getUnits()[i].unitIds.end());
             }
-            else
-            {
-                Print::PrintError(groups[g].unitName + " is not an existing FED!");
-                throw runtime_error("Unexisting FED");
-            }
+        }
+
+        if (all.size() == 0)
+        {
+            Print::PrintError(groups[g].unitName + " is not an existing FED!");
+            throw runtime_error("Unexisting FED");
         }
 
         all.erase(remove(all.begin(), all.end(), -1), all.end());

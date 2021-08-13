@@ -14,6 +14,7 @@
 #include "Fred/Protocols/SWT.h"
 #include "Fred/Protocols/IC.h"
 #include "Fred/Protocols/CRORC.h"
+#include "Fred/Protocols/CRU.h"
 
 const string ProcessMessage::SUCCESS = "success";
 const string ProcessMessage::FAILURE = "failure";
@@ -154,6 +155,8 @@ vector<string> ProcessMessage::generateFullMessage(Instructions::Instruction& in
                 break;
             case Instructions::Type::CRORC: fullMessage = CRORC::generateMessage(instructions, outputPattern, pollPattern, this);
                 break;
+            case Instructions::Type::CRU: fullMessage = CRU::generateMessage(instructions, outputPattern, pollPattern, this);
+                break;
         }
     }
     catch (exception& e)
@@ -214,6 +217,8 @@ vector<vector<unsigned long> > ProcessMessage::readbackValues(const string& mess
                 break;
             case Instructions::Type::CRORC: results = CRORC::readbackValues(message, outputPattern, instructions);
                 break;
+            case Instructions::Type::CRU: results = CRU::readbackValues(message, outputPattern, instructions);
+                break;
         }
     }
     catch (exception& e)
@@ -256,6 +261,8 @@ uint32_t ProcessMessage::getReturnWidth(Instructions::Type type)
         case Instructions::Type::IC: width = IC::getReturnWidth();
             break;
         case Instructions::Type::CRORC: width = CRORC::getReturnWidth();
+            break;
+        case Instructions::Type::CRU: width = CRU::getReturnWidth();
             break;
     }
 

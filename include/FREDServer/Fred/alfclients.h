@@ -23,13 +23,13 @@ class AlfClients
 public:
     struct Nodes
     {
-        AlfRpcInfo *sca, *swt, *ic, *crorc;
+        AlfRpcInfo *sca, *swt, *ic, *crorc, *cru;
         Queue *queue;
     };
 
     struct CruNodes
     {
-        CruAlfRpcInfo *registerWrite, *registerRead, *patternPlayer;
+        CruAlfRpcInfo *patternPlayer;
     };
 
     struct LlaNodes

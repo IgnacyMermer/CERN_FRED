@@ -72,6 +72,10 @@ vector<string> Instructions::processConfigFile(string file)
                     {
                         instruction.type = Type::CRORC;
                     }
+                    else if(right == "CRU")
+                    {
+                        instruction.type = Type::CRU;
+                    }
                     else throw runtime_error(this->path + " has invalid type name " + right + " in topic " + name);
                 }
                 //else if (left == "SUBSCRIBE")

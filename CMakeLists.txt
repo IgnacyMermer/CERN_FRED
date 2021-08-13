@@ -66,6 +66,7 @@ file(GLOB SOURCES "src/main.cpp"
         "src/Fred/Protocols/SWT.cpp"
         "src/Fred/Protocols/IC.cpp"
         "src/Fred/Protocols/CRORC.cpp"
+        "src/Fred/Protocols/CRU.cpp"
 		"src/Fred/Database/databaseinterface.cpp"
 		"src/Fred/Database/multitype.cpp"
 	)
