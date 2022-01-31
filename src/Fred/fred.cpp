@@ -228,10 +228,10 @@ string Fred::getFredDns()
     return fredDns;
 }
 
-void Fred::registerMapiObject(string topic, Mapi* mapi)
+void Fred::registerMapiObject(string topic, Mapi* mapi, bool createFakeLink)
 {
+    fredTopics.registerMapiObject(topic, mapi, createFakeLink);
     mapi->registerMapi(this, topic);
-    fredTopics.registerMapiObject(topic, mapi);
 }
 
 /*

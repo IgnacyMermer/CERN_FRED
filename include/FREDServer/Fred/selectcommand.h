@@ -8,7 +8,7 @@
 #include "Alfred/service.h"
 
 class Fred;
-class ChainTopic;
+struct ChainTopic;
 
 class SelectCommand: public CommandString
 {

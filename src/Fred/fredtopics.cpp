@@ -49,6 +49,7 @@ void FredTopics::registerUnit(string section, Mapping::Unit& unit, Instructions 
 
             topics[fullName].placeId = uId;
             topics[fullName].mapi = NULL;
+            topics[fullName].fakeLink = false;
 
             topics[fullName].command =  new MappedCommand(fullName + "_REQ", this->fred, &topics[fullName], uId);
             this->fred->RegisterCommand(topics[fullName].command);
@@ -106,16 +107,52 @@ void FredTopics::registerGroup(string section, Groups::Group& group)
     groupTopics[fullName].unitIds = group.unitIds;
 }
 
-void FredTopics::registerMapiObject(string topic, Mapi* mapi)
+void FredTopics::registerMapiObject(string topic, Mapi* mapi, bool createFakeLink)
 {
     auto it = topics.find(topic);
     if (it == topics.end())
     {
+        if (createFakeLink)
+        {
+            topics[topic] = ChainTopic();
+            topics[topic].name = topic;
+
+            topics[topic].instruction = NULL;
+            topics[topic].unit = NULL;
+
+            topics[topic].alfLink.first = NULL;
+            topics[topic].alfLink.second = NULL;
+
+            topics[topic].alfQueue.first = NULL;
+            topics[topic].alfQueue.second = NULL;
+
+            topics[topic].placeId = 0;
+            topics[topic].mapi = mapi;
+            topics[topic].fakeLink = true;
+
+            topics[topic].command = new MappedCommand(topic + "_REQ", this->fred, &topics[topic], 0);
+            this->fred->RegisterCommand(topics[topic].command);
+
+            topics[topic].service = new ServiceString(topic + "_ANS", this->fred);
+            this->fred->RegisterService(topics[topic].service);
+
+            topics[topic].error = new ServiceString(topic + "_ERR", this->fred);
+            this->fred->RegisterService(topics[topic].error);
+
+            return;
+        }
+
         Print::PrintError("Requested MAPI topic " + topic + " is not a registered topic!");
         throw runtime_error("Requested MAPI topic " + topic + " is not a registered topic!");
     }
     else
     {
+        if (createFakeLink)
+        {
+            Print::PrintError("Requested MAPI topic " + topic + " is registered topic, but useFakeLink argument was set!");
+            throw runtime_error("Requested MAPI topic " + topic + " is registered topic, but useFakeLink argument was set!");
+        }
+
         topics[topic].mapi = mapi;
         Print::PrintVerbose("Mapi object registered to " + topic);
     }

@@ -11,8 +11,8 @@
 
 using namespace std;
 
-class ChainTopic;
-class GroupCommand;
+struct ChainTopic;
+struct GroupCommand;
 
 class ProcessMessage
 {

@@ -29,6 +29,47 @@ const void* MappedCommand::Execution(void *value)
 
     Print::PrintVerbose(name, "Received command: \n" + request);
 
+    if (this->topic->fakeLink)
+    {
+        if (this->topic->mapi == NULL)
+        {
+            Print::PrintError(name, "Cannot use fakeLink in non MAPI topic!");
+            return NULL;
+        }
+
+        request = this->topic->mapi->processInputMessage(request);
+
+        if (!this->topic->mapi->customMessageProcess())
+        {
+            string response = this->topic->mapi->processOutputMessage(request);
+            if (!this->topic->mapi->noReturn)
+            {
+                if (this->topic->mapi->returnError)
+                {
+                    this->topic->error->Update(response);
+                    Print::PrintError(this->topic->name, "Updating MAPI error service!");
+                    this->topic->mapi->returnError = false;
+                }
+                else
+                {
+                    this->topic->service->Update(response);
+                    Print::PrintVerbose(this->topic->name, "Updating MAPI service");
+                }
+            }
+            else
+            {
+                Print::PrintVerbose(this->topic->name, "Mapi is noReturn");
+                this->topic->mapi->noReturn = false;
+            }
+        }
+        else
+        {
+            dynamic_cast<IndefiniteMapi*>(this->topic->mapi)->requestReceived(request);
+        }
+
+        return NULL;
+    }
+
     AlfRpcInfo* alfRpcInfo = this->useCru ? this->topic->alfLink.first : this->topic->alfLink.second;
     if (alfRpcInfo == NULL)
     {

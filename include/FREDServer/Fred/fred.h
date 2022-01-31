@@ -38,7 +38,7 @@ public:
 
     string getFredDns();
 
-    void registerMapiObject(string topic, Mapi* mapi);
+    void registerMapiObject(string topic, Mapi* mapi, bool createFakeLink = false);
     void Start();
 };
 

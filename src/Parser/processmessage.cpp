@@ -108,6 +108,7 @@ ProcessMessage::ProcessMessage(map<string, vector<double> > inVars, int32_t plac
 ProcessMessage::ProcessMessage(Mapi* mapi, string input, bool useCru, Location::AlfEntry::Version alfVersion)
 {
     this->mapi = mapi;
+    this->groupCommand = NULL;
     this->fullMessage = input;
     this->useCru = useCru;
     this->alfVersion = alfVersion;

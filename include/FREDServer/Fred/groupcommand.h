@@ -8,8 +8,8 @@
 #include "Alfred/command.h"
 
 class Fred;
-class GroupTopic;
-class ChainTopic;
+struct GroupTopic;
+struct ChainTopic;
 
 class GroupCommand: public CommandString
 {
