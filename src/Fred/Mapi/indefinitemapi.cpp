@@ -116,6 +116,11 @@ string IndefiniteMapi::getRequest()
 
 string IndefiniteMapi::executeAlfSequence(string sequence)
 {
+    if (this->thisMapi->fakeLink)
+    {
+        return sequence;
+    }
+
     if (this_thread::get_id() != this->executionThreadId)
     {
         Print::PrintError("Cannot call executeAlfSequence from different thread");

@@ -5,7 +5,7 @@
 #include "Alfred/command.h"
 
 class Fred;
-class ChainTopic;
+struct ChainTopic;
 
 class MappedCommand: public CommandString
 {

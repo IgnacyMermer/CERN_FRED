@@ -36,6 +36,7 @@ struct ChainTopic
     int32_t placeId;
 
     Mapi* mapi;
+    bool fakeLink;
 };
 
 struct GroupTopic
@@ -59,7 +60,7 @@ public:
     FredTopics(Fred* fred);
     void registerUnit(string section, Mapping::Unit& unit, Instructions& instructions);
     void registerGroup(string section, Groups::Group& group);
-    void registerMapiObject(string topic, Mapi* mapi);
+    void registerMapiObject(string topic, Mapi* mapi, bool createFakeLink = false);
     map<string, ChainTopic> &getTopicsMap();
 
 private:
