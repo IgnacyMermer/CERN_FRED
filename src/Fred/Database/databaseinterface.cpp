@@ -88,6 +88,7 @@ vector<vector<MultiBase*> > DatabaseInterface::executeQuery(const string &query,
 
     try
     {
+        lock_guard<mutex> dbLock(DatabaseInterface::instance->dbMutex);
         Statement* statement = DatabaseInterface::instance->connection->createStatement(query);
         ResultSet* resultSet = statement->executeQuery();
 
@@ -189,6 +190,7 @@ bool DatabaseInterface::executeUpdate(const string& update, string& message)
 
     try
     {
+        lock_guard<mutex> dbLock(DatabaseInterface::instance->dbMutex);
         Statement* statement = DatabaseInterface::instance->connection->createStatement(update);
         statement->executeUpdate();
         DatabaseInterface::instance->connection->terminateStatement(statement);
@@ -218,6 +220,7 @@ void DatabaseInterface::commitUpdate(bool commit)
         return;
     }
 
+    lock_guard<mutex> dbLock(DatabaseInterface::instance->dbMutex);
     if (commit)
     {
         DatabaseInterface::instance->connection->commit();

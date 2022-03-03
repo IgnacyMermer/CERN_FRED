@@ -4,6 +4,7 @@
 #include <occi/occi.h>
 #include "multitype.h"
 #include <vector>
+#include <mutex>
 
 using namespace std;
 using namespace oracle::occi;
@@ -17,6 +18,7 @@ private:
 
     Environment* environment;
     Connection* connection;
+    mutex dbMutex;
 
 public:
     DatabaseInterface(const string& user, const string& password, const string& connString);
