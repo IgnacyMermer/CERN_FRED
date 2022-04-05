@@ -53,6 +53,27 @@ bool DatabaseInterface::connect()
     return this->connection != NULL;
 }
 
+bool DatabaseInterface::reconnect()
+{
+    if (!this->connection)
+    {
+        return false;
+    }
+
+    try
+    {
+        this->connection = this->environment->createConnection(this->user, this->password, this->connString);
+    }
+    catch (SQLException& exception)
+    {
+        Print::PrintError("Databse error: " + exception.getMessage() + ", Code: " + to_string(exception.getErrorCode()));
+        return false;
+    }
+
+    Print::PrintInfo("Successfully reconnected to the database");
+    return true;
+}
+
 bool DatabaseInterface::isConnected()
 {
     string message;
@@ -80,6 +101,8 @@ bool DatabaseInterface::isConnected(string& message)
 
 vector<vector<MultiBase*> > DatabaseInterface::executeQuery(const string &query, bool& status, string& message)
 {
+    lock_guard<recursive_mutex> dbLock(DatabaseInterface::instance->dbMutex);
+
     status = DatabaseInterface::isConnected(message);
     if (!status)
     {
@@ -88,7 +111,6 @@ vector<vector<MultiBase*> > DatabaseInterface::executeQuery(const string &query,
 
     try
     {
-        lock_guard<mutex> dbLock(DatabaseInterface::instance->dbMutex);
         Statement* statement = DatabaseInterface::instance->connection->createStatement(query);
         ResultSet* resultSet = statement->executeQuery();
 
@@ -144,6 +166,16 @@ vector<vector<MultiBase*> > DatabaseInterface::executeQuery(const string &query,
     }
     catch (SQLException& exception)
     {
+        if (exception.getErrorCode() == 2396)
+        {
+            Print::PrintWarning("Database timeout reached, trying to reconnect!");
+            if (DatabaseInterface::instance->reconnect())
+            {
+                return DatabaseInterface::executeQuery(query, status, message);
+            }
+        }
+
+        Print::PrintError("Databse error: " + exception.getMessage() + ", Code: " + to_string(exception.getErrorCode()));
         status = false;
         message = exception.what();
         return vector<vector<MultiBase*> >();
@@ -182,6 +214,8 @@ void DatabaseInterface::clearQueryResult(vector<vector<MultiBase*> >& result)
 
 bool DatabaseInterface::executeUpdate(const string& update, string& message)
 {
+    lock_guard<recursive_mutex> dbLock(DatabaseInterface::instance->dbMutex);
+
     bool status = DatabaseInterface::isConnected(message);
     if (!status)
     {
@@ -190,7 +224,6 @@ bool DatabaseInterface::executeUpdate(const string& update, string& message)
 
     try
     {
-        lock_guard<mutex> dbLock(DatabaseInterface::instance->dbMutex);
         Statement* statement = DatabaseInterface::instance->connection->createStatement(update);
         statement->executeUpdate();
         DatabaseInterface::instance->connection->terminateStatement(statement);
@@ -199,6 +232,17 @@ bool DatabaseInterface::executeUpdate(const string& update, string& message)
     }
     catch (SQLException& exception)
     {
+        if (exception.getErrorCode() == 2396)
+        {
+            Print::PrintWarning("Database timeout reached, trying to reconnect!");
+            if (DatabaseInterface::instance->reconnect())
+            {
+                return DatabaseInterface::executeUpdate(update, message);
+            }
+        }
+
+        Print::PrintError("Databse error: " + exception.getMessage() + ", Code: " + to_string(exception.getErrorCode()));
+
         message = exception.what();
         return false;
     }
@@ -214,13 +258,14 @@ bool DatabaseInterface::executeUpdate(const string& update)
 
 void DatabaseInterface::commitUpdate(bool commit)
 {
+    lock_guard<recursive_mutex> dbLock(DatabaseInterface::instance->dbMutex);
+
     bool status = DatabaseInterface::isConnected();
     if (!status)
     {
         return;
     }
 
-    lock_guard<mutex> dbLock(DatabaseInterface::instance->dbMutex);
     if (commit)
     {
         DatabaseInterface::instance->connection->commit();

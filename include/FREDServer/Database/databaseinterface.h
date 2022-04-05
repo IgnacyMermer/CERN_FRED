@@ -18,7 +18,9 @@ private:
 
     Environment* environment;
     Connection* connection;
-    mutex dbMutex;
+    recursive_mutex dbMutex;
+
+    bool reconnect();
 
 public:
     DatabaseInterface(const string& user, const string& password, const string& connString);
