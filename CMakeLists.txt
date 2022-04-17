@@ -23,7 +23,8 @@ set(ALFRED_SOURCES
 		"src/Alfred/rpc.cpp"
 		"src/Alfred/rpcinfo.cpp"
 		"src/Alfred/service.cpp"
-        "src/Alfred/dimutilities.cpp"
+                "src/Alfred/dimutilities.cpp"
+                "src/Alfred/queuelock.cpp"
 	)
 
 add_library(Alfred SHARED ${ALFRED_SOURCES})
