@@ -4,10 +4,11 @@
 #include "Fred/Mapi/mapi.h"
 #include <thread>
 #include <mutex>
-#include <condition_variable>
 #include <atomic>
 #include <map>
 #include <utility>
+#include <list>
+#include "Alfred/queuelock.h"
 
 using namespace std;
 
@@ -18,9 +19,10 @@ private:
     thread::id executionThreadId;
     atomic<bool> isFinished;
 
-    condition_variable requestRecv, sequenceRecv;
+    QueueLock *requestRecv, *sequenceRecv;
     string response;
-    pair<string, bool> request;
+    atomic<bool> responseReceived;
+    list<string> requests;
     mutex requestAccess;
 
     static map<thread::id, IndefiniteMapi*> mappedThreads;

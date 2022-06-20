@@ -29,7 +29,8 @@ const void* AlfRpcInfo::Execution(void *value)
             return NULL;
         }
 
-        if (!this->currentTransaction.first->checkLink(response, *this->currentTransaction.second))
+        // don't check link status if MAPI is used, will be checked in the user code
+        if (this->currentTransaction.second->mapi == NULL && !this->currentTransaction.first->checkLink(response, *this->currentTransaction.second))
         {
             pollPatern->at(this->currentPart) = "ERROR"; //stop requests
 

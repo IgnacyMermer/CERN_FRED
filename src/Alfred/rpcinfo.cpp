@@ -3,6 +3,9 @@
 #include "Alfred/client.h"
 #include "Alfred/print.h"
 #include "Alfred/alfred.h"
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 vector<pair<string, string> > RpcInfo::names;
 
@@ -215,29 +218,58 @@ void* RpcInfoFloat::Send(float value)
 
 /*----------------------------------------------------------------------------------------------*/
 
-RpcInfoString::RpcInfoString(string name, string dns, ALFRED* alfred): RpcInfo::RpcInfo(name, dns, alfred)
+string RpcInfoString::noLink = "NO RPC LINK!";
+
+RpcInfoString::RpcInfoString(string name, string dns, ALFRED* alfred): RpcInfo::RpcInfo(name, dns, alfred), DimStampedInfo((name + "/RpcOut").c_str(), const_cast<char*>(noLink.c_str()))
 {
     type = ALFRED_TYPES::DIM_TYPE::STRING;
 
-    strcpy(noLink, "NO RPC LINK!"); //response from the callback when link is dow
-
-    rpcInfo = new DimRpcInfo(name.c_str(), noLink);
-
     Print::PrintVerbose(string("RpcInfo ") + name + " registered!");
+    dataLock = new QueueLock(1);
+    waitData = false;
 }
 
 RpcInfoString::~RpcInfoString()
 {
-    delete rpcInfo;
+    dataLock->notify();
+    delete dataLock;
 }
 
 void* RpcInfoString::Send(char *value)
 {
-    rpcInfo->setData(value);
+    bool sent = false;
+    waitData = true;
+    dataLock->clear();
+    if (DimClient::sendCommand((this->name + "/RpcIn").c_str(), value) == 1)
+    {
+        sent = true;
+    }
 
-    char* recValue = rpcInfo->getString();
+    if (sent)
+    {
+        //dataLock->wait();
+        if (!dataLock->wait_for(5000))
+        {
+            waitData = false;
+            lock_guard<mutex> lock(dataMutex);
+            recValue = noLink;
+        }
+    }
+    else
+    {
+        //Print::PrintError(this->name, "Error in sendCommand");
+        lock_guard<mutex> lock(dataMutex);
+        recValue = noLink;
+    }
 
-    void* result = (void*)Execution((void*)recValue);
+    waitData = false;
+
+    {
+        lock_guard<mutex> lock(dataMutex);
+        execData = recValue;
+    }
+
+    void* result = (void*)Execution((void*)execData.c_str());
 
     if (serviceCallback)
     {
@@ -256,6 +288,21 @@ void* RpcInfoString::Send(char *value)
     }
 
     return result;
+}
+
+void RpcInfoString::infoHandler()
+{
+    const char* data = getQuality() == -1 ? noLink.c_str() : getString();
+    if (!waitData)
+    {
+        return;
+    }
+
+    {
+        lock_guard<mutex> lock(dataMutex);
+        recValue = data;
+    }
+    dataLock->notify();
 }
 
 /*----------------------------------------------------------------------------------------------*/

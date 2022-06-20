@@ -5,9 +5,11 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <atomic>
 #include <dim/dic.hxx>
 
 #include "Alfred/types.h"
+#include "Alfred/queuelock.h"
 
 using namespace std;
 
@@ -76,10 +78,16 @@ public:
 
 /*----------------------------------------------------------------------------------------------*/
 
-class RpcInfoString: public RpcInfo
+class RpcInfoString: public RpcInfo, DimStampedInfo
 {
 private:
-    char noLink[20];
+    static string noLink;
+    void infoHandler();
+
+    mutex dataMutex;
+    QueueLock* dataLock;
+    string recValue, execData;
+    atomic<bool> waitData;
 
 public:
     RpcInfoString(string name, string dns, ALFRED* alfred);

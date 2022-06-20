@@ -10,22 +10,21 @@ Queue::Queue(Fred* fred)
     this->isFinished = false;
     this->isProcessing = false;
     this->llaLock = NULL;
+    this->queueLock = new QueueLock;
     this->queueThread = new thread(clearQueue, this);
 }
 
 Queue::~Queue()
 {
     this->isFinished = true;
-    conditionVar.notify_one();
+    this->queueLock->notify();
     queueThread->join();
     delete queueThread;
+    delete queueLock;
 }
 
 void Queue::clearQueue(Queue *queue)
 {
-    mutex lock;
-    unique_lock<mutex> uniqueLock(lock);
-
     while (1)
     {
         if (queue->isFinished)
@@ -33,9 +32,9 @@ void Queue::clearQueue(Queue *queue)
             return;
         }
 
-        queue->conditionVar.wait(uniqueLock);
+        queue->queueLock->wait();
 
-        while (!queue->stack.empty())
+        while (!queue->stackEmpty())
         {
             queue->isProcessing = true;
 
@@ -98,6 +97,11 @@ void Queue::clearQueue(Queue *queue)
                             Print::PrintError(request.second->name, "Error starting LLA session!");
                             request.second->error->Update("Error starting LLA session!");
                             errorOccured = true;
+
+                            if (request.second->mapi && request.second->mapi->customMessageProcess())
+                            {
+                                request.second->mapi->processOutputMessage("failure\nCouldn't start session");
+                            }
                             continue;
                         }
 
@@ -123,19 +127,28 @@ void Queue::newRequest(pair<ProcessMessage*, ChainTopic*> request)
 {
     {
         lock_guard<mutex> lockGuard(stackMutex);
+
         stack.push_back(request);
     }
 
-    if (!isProcessing)
-    {
-        conditionVar.notify_one();
-    }
+    queueLock->notify();
+}
+
+void Queue::wakeUp()
+{
+    queueLock->notify();
 }
 
 size_t Queue::getStackSize()
 {
     lock_guard<mutex> lockGuard(stackMutex);
     return stack.size();
+}
+
+bool Queue::stackEmpty()
+{
+    lock_guard<mutex> lockGuard(stackMutex);
+    return stack.empty();
 }
 
 void Queue::setLlaLock(LlaLock* llaLock)

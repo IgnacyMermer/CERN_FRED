@@ -4,11 +4,12 @@
 #include <thread>
 #include <list>
 #include <utility>
-#include <condition_variable>
 #include <mutex>
 #include <atomic>
 #include "Fred/fredtopics.h"
 #include "Parser/processmessage.h"
+#include "Parser/utility.h"
+#include "Alfred/queuelock.h"
 
 using namespace std;
 
@@ -24,13 +25,15 @@ public:
     void newRequest(pair<ProcessMessage *, ChainTopic *> request);
 
     size_t getStackSize();
+    bool stackEmpty();
     void setLlaLock(LlaLock* llaLock);
     LlaLock* getLlaLock();
     bool processing();
+    void wakeUp();
 
 private:
     Fred* fred;
-    condition_variable conditionVar;
+    QueueLock* queueLock;
     thread* queueThread;
     atomic<bool> isFinished, isProcessing;
     list<pair<ProcessMessage *, ChainTopic*> > stack;
