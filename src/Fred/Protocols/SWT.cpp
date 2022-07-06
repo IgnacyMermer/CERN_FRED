@@ -19,6 +19,7 @@ void SWT::SWTpad(string& line)
 	if (line.length() <= SWT_LOW_WIDTH) ss << "0x" << setw(SWT_LOW_WIDTH) << setfill('0') << hex << line;
 	else if (line.length() <= SWT_MIDDLE_WIDTH) ss << "0x" << setw(SWT_MIDDLE_WIDTH) << setfill('0') << hex << line;
 	else if (line.length() <= SWT_HIGH_WIDTH) ss << "0x" << setw(SWT_HIGH_WIDTH) << setfill('0') << hex << line;
+	else if (line.length() == SWT_HIGH_WIDTH + 1 && line[0] == '0') ss << "0x" << setw(SWT_HIGH_WIDTH) << setfill('0') << hex << line.substr(1);
 	else throw runtime_error("SWT " + to_string(SWT_HIGH_WIDTH * 4) + " bits exceeded!"); //check SWT max width
 
 	line = ss.str();
