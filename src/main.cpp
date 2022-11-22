@@ -6,6 +6,9 @@
 #include <fstream>
 #include "Fred/fred.h"
 #include "Alfred/print.h"
+#ifdef USE_MAPI
+#include "mapifactory.h"
+#endif
 //#include "Mapi/mapiexample.h"
 
 int main(int argc, char** argv)
@@ -15,15 +18,27 @@ int main(int argc, char** argv)
 
     //MapiExample mapiExample;
 	
+	// try
+	// {
+    //     //fred.registerMapiObject("FRED1/MAPI_EXAMPLE/LOOP0/TEST", &mapiExample);
+	// }
+	// catch (exception& e)
+	// {
+	// 	exit(EXIT_FAILURE);
+	// }
+
+#ifdef USE_MAPI
+
 	try
 	{
-        //fred.registerMapiObject("FRED1/MAPI_EXAMPLE/LOOP0/TEST", &mapiExample);
+		MapiFactory mapiFactory(&fred);
 	}
-	catch (exception& e)
+	catch(exception& e)
 	{
 		exit(EXIT_FAILURE);
 	}
 
+#endif
 	fred.Start();
 	return 0;
 }
