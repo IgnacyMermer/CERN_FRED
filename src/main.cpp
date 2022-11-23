@@ -12,7 +12,7 @@ int main(int argc, char** argv)
 	Fred fred(parseOnly, Fred::readConfigFile(), "./sections");
 
 #ifdef USE_MAPI
-	MapiFactory* mapiFactory
+	MapiFactory* mapiFactory;
 	try
 	{
 		mapiFactory = new MapiFactory(&fred);

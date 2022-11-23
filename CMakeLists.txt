@@ -29,7 +29,7 @@ set(ALFRED_SOURCES
 
 add_library(Alfred SHARED ${ALFRED_SOURCES})
 
-add_definitions(-DUSE_MAPI)
+#add_definitions(-DUSE_MAPI)
 
 if (APPLE)
     target_link_libraries(Alfred libdim.a)
