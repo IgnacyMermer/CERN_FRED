@@ -32,5 +32,5 @@ MapiFactory::~MapiFactory()
 **/
 void MapiFactory::generateObjects()
 {
-    
+    //this->fred->registerMapiObject(&MapiExample);
 }
