@@ -1,7 +1,8 @@
 #include "Fred/Config/location.h"
 #include "Fred/Config/mapping.h"
 #include "Parser/utility.h"
-
+#include <exception>
+#include <stdexcept>
 Mapping::Mapping(vector<string> data)
 {
     for (size_t i = 0; i < data.size(); i++)

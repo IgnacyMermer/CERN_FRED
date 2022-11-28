@@ -42,10 +42,11 @@ private:
     map<string, map<int32_t, map<int32_t, map<int32_t, Nodes> > > > clients; //ALF,SERIAL,ENDPOINT,LINK
     map<string, map<int32_t, CruNodes> > cruClients; //ALF,SERIAL
     map<string, map<int32_t, LlaNodes> > llaClients; //ALF,SERIAL
+    int currentBank, bankCount;
     Fred* fred;
 
 public:
-    AlfClients(Fred* fred);
+    AlfClients(Fred* fred, int bankCount = 0);
     ~AlfClients();
 
     void registerAlf(Location::AlfEntry& entry);

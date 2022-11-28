@@ -20,6 +20,7 @@ MappedCommand::~MappedCommand()
 
 const void* MappedCommand::Execution(void *value)
 {
+
     if (!value)
     {
         Print::PrintError(name, "Invalid request, no value received!");

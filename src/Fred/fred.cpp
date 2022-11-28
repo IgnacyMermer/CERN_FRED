@@ -20,7 +20,7 @@ bool Fred::terminate = false;
 /*
  * Fred constructor
  */
-Fred::Fred(bool parseOnly, map<string, string> config, string mainDirectory): ALFRED::ALFRED(config["NAME"], config["DNS"], parseOnly), alfClients(this), fredTopics(this)
+Fred::Fred(bool parseOnly, map<string, string> config, string mainDirectory, int bankCount): ALFRED::ALFRED(config["NAME"], config["DNS"], parseOnly), alfClients(this, bankCount), fredTopics(this)
 {
     signal(SIGINT, &termFred);
 
@@ -81,6 +81,11 @@ Fred::~Fred()
     if (this->databaseInterface)
     {
         delete this->databaseInterface;
+    }
+
+    for (auto executor = this->queueExecutors.begin(); executor !=  this->queueExecutors.end(); executor++)
+    {
+        delete executor->second;
     }
 }
 
@@ -159,6 +164,7 @@ void Fred::generateTopics()
         for (auto unit = units.begin(); unit != units.end(); unit++)
         {
             fredTopics.registerUnit(sections[i].getName(), *unit, sections[i].instructions);
+
         }
 
         vector<Groups::Group>& groups = sections[i].groups.getGroups();

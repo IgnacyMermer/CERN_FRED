@@ -9,6 +9,8 @@
 #include "Fred/Mapi/iterativemapi.h"
 #include "Fred/Mapi/mapigroup.h"
 #include "Database/databaseinterface.h"
+#include "Fred/queueexecutor.h"
+#include <map>
 
 class Fred: public ALFRED
 {
@@ -27,7 +29,10 @@ private:
     DatabaseInterface* databaseInterface;
 
 public:
-    Fred(bool parseOnly, map<string, string> config, string mainDirectory);
+
+    map<int,QueueExecutor*> queueExecutors;
+
+    Fred(bool parseOnly, map<string, string> config, string mainDirectory, int bankCount=0);
     ~Fred();
     static map<string, string> readConfigFile();
     static bool commandLineArguments(int argc, char** argv);
