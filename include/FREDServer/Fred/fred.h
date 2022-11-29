@@ -31,8 +31,9 @@ private:
 public:
 
     map<int,QueueExecutor*> queueExecutors;
+    int bankCount;
 
-    Fred(bool parseOnly, map<string, string> config, string mainDirectory, int bankCount=0);
+    Fred(bool parseOnly, map<string, string> config, string mainDirectory);
     ~Fred();
     static map<string, string> readConfigFile();
     static bool commandLineArguments(int argc, char** argv);

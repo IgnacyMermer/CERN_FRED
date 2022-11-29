@@ -6,11 +6,10 @@
 #include "Fred/llalock.h"
 #include "Alfred/print.h"
 
-AlfClients::AlfClients(Fred *fred, int bankCount)
+AlfClients::AlfClients(Fred *fred)
 {
     this->fred = fred;
     this->currentBank = 0;
-    this->bankCount = bankCount;
 }
 
 AlfClients::~AlfClients()
@@ -104,10 +103,10 @@ AlfClients::Nodes AlfClients::createAlfInfo(string id, int32_t serial, int32_t e
 
     nodes.queue = new Queue(this->fred, this->currentBank);
     this->currentBank++;
-    if(this->bankCount != 0)
+    if(this->fred->bankCount != 0)
     {
         
-        if(this->currentBank > this->bankCount)
+        if(this->currentBank > this->fred->bankCount)
         {
             this->currentBank=0;
         }

@@ -20,13 +20,21 @@ bool Fred::terminate = false;
 /*
  * Fred constructor
  */
-Fred::Fred(bool parseOnly, map<string, string> config, string mainDirectory, int bankCount): ALFRED::ALFRED(config["NAME"], config["DNS"], parseOnly), alfClients(this, bankCount), fredTopics(this)
+Fred::Fred(bool parseOnly, map<string, string> config, string mainDirectory): ALFRED::ALFRED(config["NAME"], config["DNS"], parseOnly), alfClients(this), fredTopics(this)
 {
     signal(SIGINT, &termFred);
 
     this->fredDns = config["DNS"];
     this->databaseInterface = NULL;
-
+    if(config["BANK_COUNT"] != "")
+    {
+        this->bankCount = std::stoi(config["BANK_COUNT"]);
+        Print::PrintInfo("Starting with bank count of " + config["BANK_COUNT"]);
+    }
+    else
+    {
+        this->bankCount = 0;
+    }
     if (config["DB_CONN"] != "" && config["DB_USER"] != "" && config["DB_PASS"] != "")
     {
         Print::PrintInfo("Connecting to database " + config["DB_USER"] + ".");
