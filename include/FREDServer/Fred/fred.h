@@ -46,6 +46,8 @@ public:
 
     void registerMapiObject(string topic, Mapi* mapi, bool createFakeLink = false);
     void Start();
+    bool isNumber(string text);
+
 };
 
 #endif // FRED_H
