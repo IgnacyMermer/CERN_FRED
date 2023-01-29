@@ -2,6 +2,7 @@
 #include <fstream>
 #include "Fred/fred.h"
 #include "Alfred/print.h"
+
 #ifdef USE_MAPI
 #include "mapifactory.h"
 #endif
@@ -9,9 +10,13 @@
 int main(int argc, char** argv)
 {
 	bool parseOnly = Fred::commandLineArguments(argc, argv);
+
+#ifndef USE_MAPI
 	Fred fred(parseOnly, Fred::readConfigFile(), "./sections");
 
-#ifdef USE_MAPI
+#elseif USE_MAPI
+	Fred fred(parseOnly, Fred::readConfigFile(), "./user/sections");
+
 	MapiFactory* mapiFactory;
 	try
 	{
@@ -21,11 +26,13 @@ int main(int argc, char** argv)
 	{
 		exit(EXIT_FAILURE);
 	}
-
 #endif
+
 	fred.Start();
+
 #ifdef USE_MAPI
 	delete mapiFactory;
 #endif
+
 	return 0;
 }

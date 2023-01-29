@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.1)
 set(CMAKE_CXX_STANDARD 17)
 project(FREDServer)
 
-include_directories(include/FREDServer include include/occi mapi/include)
+include_directories(include/FREDServer include include/occi)
 
 if (APPLE)
     link_directories(/usr/local/lib /usr/local/lib/occi)
@@ -29,7 +29,14 @@ set(ALFRED_SOURCES
 
 add_library(Alfred SHARED ${ALFRED_SOURCES})
 
-#add_definitions(-DUSE_MAPI)
+if (MAPI)
+    include_directories(user/mapi/include)
+    add_compile_definitions(-DUSE_MAPI)
+    file(GLOB MAPI_SOURCES
+        "user/mapi/mapifactory.cpp"
+        "user/mapi/src/*.cpp"
+    )
+endif ()
 
 if (APPLE)
     target_link_libraries(Alfred libdim.a)
@@ -64,8 +71,6 @@ file(GLOB SOURCES "src/main.cpp"
         "src/Fred/Mapi/iterativemapi.cpp"
         "src/Fred/Mapi/mapigroup.cpp"
         "src/Fred/Mapi/indefinitemapi.cpp"
-        "mapi/mapifactory.cpp"
-        "mapi/src/*.cpp"
         "src/Fred/Protocols/SCA.cpp"
         "src/Fred/Protocols/SWT.cpp"
         "src/Fred/Protocols/IC.cpp"
@@ -75,7 +80,12 @@ file(GLOB SOURCES "src/main.cpp"
 		"src/Fred/Database/multitype.cpp"
 	)
 
-add_executable(FREDServer ${SOURCES})
+if (MAPI)
+    add_executable(FREDServer ${SOURCES} ${MAPI_SOURCES})
+else ()
+    add_executable(FREDServer ${SOURCES})
+endif ()    
+
 if (APPLE)
     target_link_libraries(FREDServer Alfred clntsh occi clntshcore nnz19)
 else ()
