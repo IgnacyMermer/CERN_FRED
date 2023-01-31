@@ -32,7 +32,7 @@ add_library(Alfred SHARED ${ALFRED_SOURCES})
 if (MAPI)
     message(STATUS "Including MAPI")
     include_directories(user/mapi/include)
-    add_compile_definitions(-DUSE_MAPI)
+    add_compile_definitions(USE_MAPI)
     file(GLOB MAPI_SOURCES
         "user/mapi/mapifactory.cpp"
         "user/mapi/src/*.cpp"
