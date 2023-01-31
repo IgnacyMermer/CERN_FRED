@@ -30,6 +30,7 @@ set(ALFRED_SOURCES
 add_library(Alfred SHARED ${ALFRED_SOURCES})
 
 if (MAPI)
+    message(STATUS "Including MAPI")
     include_directories(user/mapi/include)
     add_compile_definitions(-DUSE_MAPI)
     file(GLOB MAPI_SOURCES
