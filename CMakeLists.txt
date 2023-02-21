@@ -10,9 +10,9 @@ else ()
     link_directories(lib)
 endif ()
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ./lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ./lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ../bin)
 
 set(ALFRED_SOURCES
 		"src/Alfred/alfred.cpp"
@@ -31,11 +31,11 @@ add_library(Alfred SHARED ${ALFRED_SOURCES})
 
 if (MAPI)
     message(STATUS "Including MAPI")
-    include_directories(user/mapi/include)
+    include_directories(../mapi/include)
     add_compile_definitions(USE_MAPI)
     file(GLOB MAPI_SOURCES
-        "user/mapi/mapifactory.cpp"
-        "user/mapi/src/*.cpp"
+        "../mapi/src/mapifactory.cpp"
+        "../mapi/src/*.cpp"
     )
 endif ()
 

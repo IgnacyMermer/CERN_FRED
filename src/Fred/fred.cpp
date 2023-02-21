@@ -91,11 +91,7 @@ map<string, string> Fred::readConfigFile()
 {
     try
     {
-#ifdef USE_MAPI
-        vector<string> lines = Parser::readFile("fred.conf", "./user/config");
-#else 
         vector<string> lines = Parser::readFile("fred.conf", "./config");
-#endif
 
         map<string, string> config = { { "NAME", "" }, { "DNS", "" }, { "DB_CONN", "" }, { "DB_USER", "" }, { "DB_PASS", "" } };
 

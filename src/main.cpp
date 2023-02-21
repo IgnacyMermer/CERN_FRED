@@ -10,7 +10,7 @@
 int main(int argc, char** argv)
 {
 	bool parseOnly = Fred::commandLineArguments(argc, argv);
-	Fred fred(parseOnly, Fred::readConfigFile(), "./user/sections");
+	Fred fred(parseOnly, Fred::readConfigFile(), "./sections");
 
 #ifdef USE_MAPI
 	MapiFactory* mapiFactory;
