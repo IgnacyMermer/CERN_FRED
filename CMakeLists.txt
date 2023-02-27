@@ -33,7 +33,7 @@ if (MAPI)
     message(STATUS "Including MAPI")
     include_directories(../mapi/include)
     add_compile_definitions(USE_MAPI)
-    file(GLOB MAPI_SOURCES
+    file(GLOB_RECURSE MAPI_SOURCES
         "../mapi/src/mapifactory.cpp"
         "../mapi/src/*.cpp"
     )
