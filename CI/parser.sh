@@ -7,7 +7,7 @@ cp -r ./examples/SCA/* .
 cp -r ./examples/SWT/* .
 sed -i 's/dimdnsexample.cern.ch/localhost/g' ./config/fred.conf
 
-./bin/FREDServer --p
+../bin/FREDServer --p
 
 if [ $? -ne 0 ]
 then
@@ -18,7 +18,7 @@ else
 fi
 
 cp -r ./CI/wrong_examples/* .
-./bin/FREDServer -- p
+../bin/FREDServer -- p
 
 if [ $? -ne 0 ]
 then
