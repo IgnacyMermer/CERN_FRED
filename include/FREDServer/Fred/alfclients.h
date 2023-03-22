@@ -42,6 +42,7 @@ private:
     map<string, map<int32_t, map<int32_t, map<int32_t, Nodes> > > > clients; //ALF,SERIAL,ENDPOINT,LINK
     map<string, map<int32_t, CruNodes> > cruClients; //ALF,SERIAL
     map<string, map<int32_t, LlaNodes> > llaClients; //ALF,SERIAL
+    int currentBank;
     Fred* fred;
 
 public:

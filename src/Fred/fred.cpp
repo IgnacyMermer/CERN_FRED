@@ -27,6 +27,25 @@ Fred::Fred(bool parseOnly, map<string, string> config, string mainDirectory): AL
     this->fredDns = config["DNS"];
     this->databaseInterface = NULL;
 
+    if(config["BANK_COUNT"] != "")
+    {
+        if(isNumber(config["BANK_COUNT"]))
+        {
+            
+            this->bankCount = std::stoi(config["BANK_COUNT"]);
+            Print::PrintInfo("Starting with bank count of " + config["BANK_COUNT"]);
+        }
+        else
+        {
+            Print::PrintError("Only positive number can be used in BANK_COUNT parameter!");
+            exit(EXIT_FAILURE);
+        }
+    }
+    else
+    {
+        this->bankCount = 0;
+    }
+
     if (config["DB_CONN"] != "" && config["DB_USER"] != "" && config["DB_PASS"] != "")
     {
         Print::PrintInfo("Connecting to database " + config["DB_USER"] + ".");
@@ -82,6 +101,11 @@ Fred::~Fred()
     {
         delete this->databaseInterface;
     }
+
+    for (auto executor = this->queueExecutors.begin(); executor !=  this->queueExecutors.end(); executor++)
+    {
+        delete executor->second;
+    }
 }
 
 /*
@@ -93,7 +117,7 @@ map<string, string> Fred::readConfigFile()
     {
         vector<string> lines = Parser::readFile("fred.conf", "./config");
 
-        map<string, string> config = { { "NAME", "" }, { "DNS", "" }, { "DB_CONN", "" }, { "DB_USER", "" }, { "DB_PASS", "" } };
+        map<string, string> config = { { "NAME", "" }, { "DNS", "" }, { "DB_CONN", "" }, { "DB_USER", "" }, { "DB_PASS", "" }, {"BANK_COUNT", ""} };
 
         for (size_t i = 0; i < lines.size(); i++)
         {
@@ -159,6 +183,7 @@ void Fred::generateTopics()
         for (auto unit = units.begin(); unit != units.end(); unit++)
         {
             fredTopics.registerUnit(sections[i].getName(), *unit, sections[i].instructions);
+
         }
 
         vector<Groups::Group>& groups = sections[i].groups.getGroups();
@@ -328,4 +353,13 @@ void Fred::Start()
     {
         usleep(100000);
     }
+}
+
+bool Fred::isNumber(string text)
+{
+    for (char const &ch : text) {
+        if (std::isdigit(ch) == 0)
+            return false;
+    }
+    return true;
 }

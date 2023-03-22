@@ -4,10 +4,12 @@
 #include "Fred/llaalfrpcinfo.h"
 #include "Fred/fred.h"
 #include "Fred/llalock.h"
+#include "Alfred/print.h"
 
 AlfClients::AlfClients(Fred *fred)
 {
     this->fred = fred;
+    this->currentBank = 0;
 }
 
 AlfClients::~AlfClients()
@@ -99,7 +101,16 @@ AlfClients::Nodes AlfClients::createAlfInfo(string id, int32_t serial, int32_t e
         this->fred->RegisterRpcInfo(nodes.crorc);
     }
 
-    nodes.queue = new Queue(this->fred);
+    nodes.queue = new Queue(this->fred, this->currentBank);
+    this->currentBank++;
+    if(this->fred->bankCount != 0)
+    {
+        
+        if(this->currentBank > this->fred->bankCount)
+        {
+            this->currentBank=0;
+        }
+    }
 
     return nodes;
 }

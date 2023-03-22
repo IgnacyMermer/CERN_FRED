@@ -9,6 +9,8 @@
 #include "Fred/Mapi/iterativemapi.h"
 #include "Fred/Mapi/mapigroup.h"
 #include "Database/databaseinterface.h"
+#include "Fred/queueexecutor.h"
+#include <map>
 
 class Fred: public ALFRED
 {
@@ -27,6 +29,10 @@ private:
     DatabaseInterface* databaseInterface;
 
 public:
+
+    map<int,QueueExecutor*> queueExecutors;
+    int bankCount;
+
     Fred(bool parseOnly, map<string, string> config, string mainDirectory);
     ~Fred();
     static map<string, string> readConfigFile();
@@ -40,6 +46,8 @@ public:
 
     void registerMapiObject(string topic, Mapi* mapi, bool createFakeLink = false);
     void Start();
+    bool isNumber(string text);
+
 };
 
 #endif // FRED_H
