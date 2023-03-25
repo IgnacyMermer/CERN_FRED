@@ -71,7 +71,7 @@ void AlfClients::registerAlf(Location::AlfEntry &entry)
 
 AlfClients::Nodes AlfClients::createAlfInfo(string id, int32_t serial, int32_t endpoint, int32_t link, Location::AlfEntry::Version version, Location::AlfEntry::SerialEntry::CardType cardType)
 {
-    Nodes nodes = { .sca = NULL, .swt = NULL, .ic = NULL, .crorc = NULL, .cru = NULL, .queue = NULL };
+    Nodes nodes = { .sca = NULL, .swt = NULL, .ic = NULL, .crorc = NULL, .cru = NULL, .sca_mft = NULL, .queue = NULL };
     string endpointStr = version == Location::AlfEntry::Version::v0 ? "" : ("/ENDPOINT_" + to_string(endpoint));
 
     if (cardType == Location::AlfEntry::SerialEntry::CardType::CRU)
@@ -87,6 +87,8 @@ AlfClients::Nodes AlfClients::createAlfInfo(string id, int32_t serial, int32_t e
                 this->fred->RegisterRpcInfo(nodes.sca);
                 nodes.ic = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + endpointStr + "/LINK_" + to_string(link) + "/IC_SEQUENCE", " ", this->fred, version);
                 this->fred->RegisterRpcInfo(nodes.ic);
+                nodes.sca_mft = new AlfRpcInfo(id + "/SERIAL_" + to_string(serial) + endpointStr + "/LINK_" + to_string(link) + "/SCA_MFT_PSU_SEQUENCE", " ", this->fred, version);
+                this->fred->RegisterRpcInfo(nodes.sca_mft);
             }
         }
         else if (id.find("ALF") == 0) // CRU register sequence
@@ -178,6 +180,8 @@ AlfRpcInfo* AlfClients::getAlfNode(string alf, int32_t serial, int32_t endpoint,
     {
         case Instructions::Type::SCA:
             return nodes.sca;
+        case Instructions::Type::SCA_MFT:
+            return nodes.sca_mft;
         case Instructions::Type::SWT:
             return nodes.swt;
         case Instructions::Type::IC:

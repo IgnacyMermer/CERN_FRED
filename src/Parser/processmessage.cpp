@@ -15,6 +15,7 @@
 #include "Fred/Protocols/IC.h"
 #include "Fred/Protocols/CRORC.h"
 #include "Fred/Protocols/CRU.h"
+#include "Fred/Protocols/SCAMFT.h"
 
 const string ProcessMessage::SUCCESS = "success";
 const string ProcessMessage::FAILURE = "failure";
@@ -152,6 +153,8 @@ vector<string> ProcessMessage::generateFullMessage(Instructions::Instruction& in
                 break;
             case Instructions::Type::SCA: fullMessage = SCA::generateMessage(instructions, outputPattern, pollPattern, this);
                 break;
+            case Instructions::Type::SCA_MFT: fullMessage = SCAMFT::generateMessage(instructions, outputPattern, pollPattern, this);
+                break;
             case Instructions::Type::IC: fullMessage = IC::generateMessage(instructions, outputPattern, pollPattern, this);
                 break;
             case Instructions::Type::CRORC: fullMessage = CRORC::generateMessage(instructions, outputPattern, pollPattern, this);
@@ -214,6 +217,8 @@ vector<vector<unsigned long> > ProcessMessage::readbackValues(const string& mess
                 break;
             case Instructions::Type::SCA: results = SCA::readbackValues(message, outputPattern, instructions);
                 break;
+            case Instructions::Type::SCA_MFT: results = SCAMFT::readbackValues(message, outputPattern, instructions);
+                break;
             case Instructions::Type::IC: results = IC::readbackValues(message, outputPattern, instructions);
                 break;
             case Instructions::Type::CRORC: results = CRORC::readbackValues(message, outputPattern, instructions);
@@ -258,6 +263,8 @@ uint32_t ProcessMessage::getReturnWidth(Instructions::Type type)
         case Instructions::Type::SWT: width = SWT::getReturnWidth();
             break;
         case Instructions::Type::SCA: width = SCA::getReturnWidth();
+            break;
+        case Instructions::Type::SCA_MFT: width = SCAMFT::getReturnWidth();
             break;
         case Instructions::Type::IC: width = IC::getReturnWidth();
             break;

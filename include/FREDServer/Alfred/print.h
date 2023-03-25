@@ -13,11 +13,13 @@ using namespace std;
 #define ANSI_COLOR_YELLOW  "\x1b[33m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 #define ANSI_COLOR_BLUE    "\x1b[38;5;27m"
+#define ANSI_COLOR_PURPLE  "\x1b[0;35m"
 
 class Print
 {
 private:
     static bool verbose;
+    static bool data;
     static bool logToFile;
     static string logFilePath;
 
@@ -30,6 +32,7 @@ public:
     static void PrintWarning(const string& message);
     static void PrintInfo(const string& message);
     static void PrintVerbose(const string& message);
+    static void PrintData(const string& message);
 
     static void PrintError(string topic, const string& message);
     static void PrintWarning(string topic, const string& message);
@@ -37,7 +40,11 @@ public:
     static void PrintVerbose(string topic, const string& message);
 
     static void setVerbose(bool verbose);
+    static void setData(bool data);
     static void setLogFile(const string& filePath);
+
+    static bool isVerbose(void) { return verbose; };
+    static bool isData(void)    { return data;    };
 };
 
 #endif

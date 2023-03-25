@@ -267,6 +267,7 @@ bool Fred::commandLineArguments(int argc, char** argv)
     struct option long_options[] =
     {
         {"verbose", no_argument, NULL, 'v'},
+        {"data", no_argument, NULL, 'd'},
         {"log", required_argument, NULL, 'l'},
         {"help", no_argument, NULL, 'h'},
         {"parse", no_argument, NULL, 'p'},
@@ -277,13 +278,17 @@ bool Fred::commandLineArguments(int argc, char** argv)
     string logFilePath;
 
     int c;
-    while ((c = getopt_long(argc, argv, "vl:hp" ,long_options, 0)) != -1)
+    while ((c = getopt_long(argc, argv, "vdl:hp" ,long_options, 0)) != -1)
     {
         switch (c)
         {
             case 'v':
                 Print::setVerbose(true);
                 Print::PrintWarning("FRED is verbose!");
+                break;
+            case 'd':
+                Print::setData(true);
+                Print::PrintWarning("FRED will display data!");
                 break;
             case 'l':
                 if (!optarg)
@@ -340,6 +345,7 @@ void Fred::printHelp()
     cout << "Usage: FREDServer [OPTIONS]\n\n"
         << "Optional arguments:\n"
         << "\t-v, --verbose\t\t\t\tVerbose log\n"
+        << "\t-d, --data\t\t\t\tData log\n"
         << "\t-l, --log\t\t<file>\t\tLog output to file <file>\n"
         << "\t-p, --parse\t\t\t\tParse only mode\n"
         << "\t-h, --help\t\t\t\tShow this help\n";

@@ -20,7 +20,7 @@ public:
     vector<Section> parseSections();
     vector<Section> parseCruSections();
     static vector<string> getSubsection(vector<string> full, string bracets, string& name, vector<string>& rest);
-    static vector<string> readFile(string fileName, string directory);
+    static vector<string> readFile(string fileName, string directory, bool cleanLine=true);
     static bool balancedBraces(vector<string> lines, string name);
     static void checkGroup(Section section);
 };
