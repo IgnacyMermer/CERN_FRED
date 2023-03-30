@@ -187,7 +187,9 @@ void SWT::checkIntegrity(const string& request, const string& response)
 /*
  * Return VARs values (as vector because of the multiplicity) ordered top to bottom as in the sequence 
  */
-vector<vector<unsigned long> > SWT::readbackValues(const string& message, const vector<string>& outputPattern, Instructions::Instruction& instructions)
+
+template <> 
+vector<vector<unsigned long> > SWT::readbackValues<unsigned long>(const string& message, const vector<string>& outputPattern, Instructions::Instruction& instructions)
 {
 	vector<string>& vars = instructions.vars;
 	vector<string> splitted = Utility::splitString(message, "\n");
@@ -196,6 +198,7 @@ vector<vector<unsigned long> > SWT::readbackValues(const string& message, const 
 	for (size_t i = 0; i < splitted.size(); i++)
 	{
 		values.push_back(stoul(splitted[i].size() > 4 ? splitted[i].substr(splitted[i].size() - 4) : splitted[i], NULL, 16)); //last 4 or 0
+
 	}
 
 	vector<vector<unsigned long> > results(vars.size(), vector<unsigned long>());
@@ -211,7 +214,39 @@ vector<vector<unsigned long> > SWT::readbackValues(const string& message, const 
 	return results;
 }
 
-uint32_t SWT::getReturnWidth()
+template <> 
+vector<vector<string> > SWT::readbackValues<string>(const string& message, const vector<string>& outputPattern, Instructions::Instruction& instructions)
 {
-    return SWT_RETURN_WIDTH;
+	vector<string>& vars = instructions.vars;
+	vector<string> splitted = Utility::splitString(message, "\n");
+
+	vector<string> values;
+	for (size_t i = 0; i < splitted.size(); i++)
+	{
+		values.push_back(splitted[i]);
+
+	}
+
+	vector<vector<string> > results(vars.size(), vector<string>());
+	for (size_t i = 0; i < values.size(); i++)
+	{
+		if (outputPattern[i] != "") //if there is an outvar in the request line
+		{
+			size_t id = distance(vars.begin(), find(vars.begin(), vars.end(), outputPattern[i]));
+			results[id].push_back(values[i]);
+		}
+	}
+
+	return results;
+}
+uint32_t SWT::getReturnWidth(bool highWord)
+{
+	if(highWord)
+	{
+   		return SWT_RETURN_WIDTH_HIGH;
+	}
+	else
+	{
+		return SWT_RETURN_WIDTH;
+	}
 }
