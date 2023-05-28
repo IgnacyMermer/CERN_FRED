@@ -14,6 +14,7 @@
 #include "Fred/Protocols/SWT.h"
 #include "Fred/Protocols/IC.h"
 #include "Fred/Protocols/CRORC.h"
+#include "Fred/Protocols/SCAMFT.h"
 #include "Fred/Protocols/CRU.h"
 
 vector<double> Utility::splitString2Num(const string &text, string by)
@@ -168,6 +169,8 @@ void Utility::checkMessageIntegrity(const string& request, const string& respons
             case Instructions::Type::SWT: SWT::checkIntegrity(request, response);
                 break;
             case Instructions::Type::SCA: SCA::checkIntegrity(request, response);
+                break;
+            case Instructions::Type::SCA_MFT: SCAMFT::checkIntegrity(request, response);
                 break;
             case Instructions::Type::IC: IC::checkIntegrity(request, response);
                 break;

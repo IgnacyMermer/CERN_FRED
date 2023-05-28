@@ -64,6 +64,10 @@ vector<string> Instructions::processConfigFile(string file)
                     {
                         instruction.type = Type::SCA;
                     }
+                    else if (right == "SCA_MFT")
+                    {
+                        instruction.type = Type::SCA_MFT;
+                    }
                     else if (right == "IC")
                     {
                         instruction.type = Type::IC;

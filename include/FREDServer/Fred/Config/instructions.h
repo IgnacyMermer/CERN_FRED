@@ -15,6 +15,7 @@ public:
     enum Type
     {
         SCA,
+        SCA_MFT,
         SWT,
         IC,
         CRORC,
