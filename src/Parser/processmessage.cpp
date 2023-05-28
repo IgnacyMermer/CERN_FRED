@@ -201,7 +201,7 @@ void ProcessMessage::parseInputVariables(string& line, vector<string>& inVars, i
         line.replace(left, right - left + 1, string(number));
     }
 }
-
+template <>
 vector<vector<unsigned long> > ProcessMessage::readbackValues(const string& message, Instructions::Instruction& instructions)
 {
     vector<vector<unsigned long> > results;
@@ -210,7 +210,7 @@ vector<vector<unsigned long> > ProcessMessage::readbackValues(const string& mess
     {
         switch (instructions.type)
         {
-            case Instructions::Type::SWT: results = SWT::readbackValues(message, outputPattern, instructions);
+            case Instructions::Type::SWT: results = SWT::readbackValues<unsigned long>(message, outputPattern, instructions);
                 break;
             case Instructions::Type::SCA: results = SCA::readbackValues(message, outputPattern, instructions);
                 break;
@@ -219,6 +219,27 @@ vector<vector<unsigned long> > ProcessMessage::readbackValues(const string& mess
             case Instructions::Type::CRORC: results = CRORC::readbackValues(message, outputPattern, instructions);
                 break;
             case Instructions::Type::CRU: results = CRU::readbackValues(message, outputPattern, instructions);
+                break;
+        }
+    }
+    catch (exception& e)
+    {
+        throw runtime_error(e.what());
+    }
+
+    return results;
+}
+
+template <>
+vector<vector<string> > ProcessMessage::readbackValues(const string& message, Instructions::Instruction& instructions)
+{
+    vector<vector<string> > results;
+ 
+    try
+    {
+        switch (instructions.type)
+        {
+            case Instructions::Type::SWT: results = SWT::readbackValues<string>(message, outputPattern, instructions);
                 break;
         }
     }
@@ -249,13 +270,13 @@ vector<double> ProcessMessage::calculateReadbackResult(vector<vector<unsigned lo
 /*
  * Get the width of the return value depending on the protocol used
  */
-uint32_t ProcessMessage::getReturnWidth(Instructions::Type type)
+uint32_t ProcessMessage::getReturnWidth(Instructions::Type type,bool highWord)
 {
     uint32_t width;
  
     switch (type)
     {
-        case Instructions::Type::SWT: width = SWT::getReturnWidth();
+        case Instructions::Type::SWT: width = SWT::getReturnWidth(highWord);
             break;
         case Instructions::Type::SCA: width = SCA::getReturnWidth();
             break;
@@ -343,8 +364,16 @@ void ProcessMessage::evaluateMessage(string message, ChainTopic &chainTopic, boo
                 
                 //OUT_VARs to be published
                 vector<vector<unsigned long> > values;
-                values = readbackValues(message.substr(SUCCESS.length() + 1), *chainTopic.instruction); //extract VARs
+                vector<vector<string> > strValues;
+                if(chainTopic.instruction->highWord == true)
+                {
+                    strValues = readbackValues<string>(message.substr(SUCCESS.length() + 1), *chainTopic.instruction); //extract VARs
+                }
+                else
+                {
+                    values = readbackValues<unsigned long>(message.substr(SUCCESS.length() + 1), *chainTopic.instruction); //extract VARs
 
+                }
                 vector<double> equationResults;
                 if (chainTopic.instruction->equation != "") //EQUATION
                 {
@@ -361,14 +390,25 @@ void ProcessMessage::evaluateMessage(string message, ChainTopic &chainTopic, boo
                 {
                     for (size_t i = 0; i < outVars.size(); i++)
                     {
-                        if (outVars[i] == "EQUATION") //EQUATION keyword for returining the result of the equation
+                        if (outVars[i] == "EQUATION" && chainTopic.instruction->highWord == false) //EQUATION keyword for returining the result of the equation
                         {
                             ss << equationResults[m];
                         }
                         else
                         {
                             size_t id = distance(vars.begin(), find(vars.begin(), vars.end(), outVars[i]));
+                            if(chainTopic.instruction->type == Instructions::Type::SWT)
+                            {
+                                if(chainTopic.instruction->highWord) // In case of HIGH_WORD mode take data from strValues and remove 0x prefix as it should be sent from ALF
+                                    ss << setw(getReturnWidth(chainTopic.instruction->type,chainTopic.instruction->highWord)) << setfill('0') << strValues[id][m];
+                                else
+                                    ss << "0x" << setw(getReturnWidth(chainTopic.instruction->type,chainTopic.instruction->highWord)) << setfill('0') << hex << values[id][m];
+
+                            }
+                            else
+                            {
                             ss << "0x" << setw(getReturnWidth(chainTopic.instruction->type)) << setfill('0') << hex << values[id][m];
+                            }
                         }
                         if (i < outVars.size() - 1) ss << ",";
                     }
