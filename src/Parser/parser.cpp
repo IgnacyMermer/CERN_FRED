@@ -235,7 +235,7 @@ void Parser::checkGroup(Section section)
     }
 }
 
-vector<string> Parser::readFile(string fileName, string directory)
+vector<string> Parser::readFile(string fileName, string directory, bool cleanLine)
 {
     if (directory[directory.size() - 1] == '/') directory.erase(directory.size() - 1);
 
@@ -250,8 +250,11 @@ vector<string> Parser::readFile(string fileName, string directory)
     string line;
     while (getline(inFile, line))
     {
-        Utility::removeWhiteSpaces(line);
-        Utility::removeComment(line);
+        if (cleanLine) 
+        {
+            Utility::removeWhiteSpaces(line);
+            Utility::removeComment(line);
+        }
         if (line.length() > 0)
         {
             lines.push_back(line);

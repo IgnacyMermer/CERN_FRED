@@ -10,9 +10,9 @@ else ()
     link_directories(lib)
 endif ()
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ./lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ./lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ../bin)
 
 set(ALFRED_SOURCES
 		"src/Alfred/alfred.cpp"
@@ -28,6 +28,16 @@ set(ALFRED_SOURCES
 	)
 
 add_library(Alfred SHARED ${ALFRED_SOURCES})
+
+if (MAPI)
+    message(STATUS "Including MAPI")
+    include_directories(../mapi/include)
+    add_compile_definitions(USE_MAPI)
+    file(GLOB_RECURSE MAPI_SOURCES
+        "../mapi/src/mapifactory.cpp"
+        "../mapi/src/*.cpp"
+    )
+endif ()
 
 if (APPLE)
     target_link_libraries(Alfred libdim.a)
@@ -46,6 +56,7 @@ file(GLOB SOURCES "src/main.cpp"
         "src/Fred/mappedcommand.cpp"
         "src/Fred/groupcommand.cpp"
         "src/Fred/queue.cpp"
+        "src/Fred/queueexecutor.cpp"
 		"src/Fred/section.cpp"
         "src/Fred/selectcommand.cpp"
         "src/Fred/alfinfo.cpp"
@@ -62,17 +73,22 @@ file(GLOB SOURCES "src/main.cpp"
         "src/Fred/Mapi/iterativemapi.cpp"
         "src/Fred/Mapi/mapigroup.cpp"
         "src/Fred/Mapi/indefinitemapi.cpp"
-        "src/Mapi/*.cpp"
         "src/Fred/Protocols/SCA.cpp"
         "src/Fred/Protocols/SWT.cpp"
         "src/Fred/Protocols/IC.cpp"
         "src/Fred/Protocols/CRORC.cpp"
+        "src/Fred/Protocols/SCAMFT.cpp"
         "src/Fred/Protocols/CRU.cpp"
 		"src/Fred/Database/databaseinterface.cpp"
 		"src/Fred/Database/multitype.cpp"
 	)
 
-add_executable(FREDServer ${SOURCES})
+if (MAPI)
+    add_executable(FREDServer ${SOURCES} ${MAPI_SOURCES})
+else ()
+    add_executable(FREDServer ${SOURCES})
+endif ()    
+
 if (APPLE)
     target_link_libraries(FREDServer Alfred clntsh occi clntshcore nnz19)
 else ()

@@ -46,7 +46,7 @@ bool DatabaseInterface::connect()
         this->connection = NULL;
         DatabaseInterface::instance = NULL;
 
-        Print::PrintError("Databse error: " + exception.getMessage() + ", Code: " + to_string(exception.getErrorCode()));
+        Print::PrintError("Connect Database error: " + exception.getMessage() + ", Code: " + to_string(exception.getErrorCode()));
         return false;
     }
 
@@ -66,7 +66,7 @@ bool DatabaseInterface::reconnect()
     }
     catch (SQLException& exception)
     {
-        Print::PrintError("Databse error: " + exception.getMessage() + ", Code: " + to_string(exception.getErrorCode()));
+        Print::PrintError("Reconnect Database error: " + exception.getMessage() + ", Code: " + to_string(exception.getErrorCode()));
         return false;
     }
 
@@ -116,47 +116,48 @@ vector<vector<MultiBase*> > DatabaseInterface::executeQuery(const string &query,
 
         vector<MetaData> metaData = resultSet->getColumnListMetaData();
         vector<vector<MultiBase*> > result;
-
-        while (resultSet->next())
-        {
-            vector<MultiBase*> rowResult;
-
-            for (size_t i = 1; i <= metaData.size(); i++)
+        if (metaData.size() != 0) { // Introduced in order to be able to use INSERT command in Queries.
+            while (resultSet->next())
             {
-                if (resultSet->isNull(i))
+                vector<MultiBase*> rowResult;
+
+                for (size_t i = 1; i <= metaData.size(); i++)
                 {
-                    rowResult.push_back(NULL);
-                    continue;
+                    if (resultSet->isNull(i))
+                    {
+                        rowResult.push_back(NULL);
+                        continue;
+                    }
+
+                    switch (metaData[i-1].getInt(MetaData::ATTR_DATA_TYPE))
+                    {
+                    case OCCI_TYPECODE_INTEGER:
+                    case OCCI_TYPECODE_SMALLINT:
+                        rowResult.push_back(new MultiType<int>(resultSet->getInt(i)));
+                        break;
+                    case OCCI_TYPECODE_REAL:
+                    case OCCI_TYPECODE_DOUBLE:
+                    case OCCI_TYPECODE_BDOUBLE:
+                    case OCCI_TYPECODE_FLOAT:
+                    case OCCI_TYPECODE_BFLOAT:
+                    case OCCI_TYPECODE_NUMBER:
+                    case OCCI_TYPECODE_DECIMAL:
+                        rowResult.push_back(new MultiType<double>(resultSet->getDouble(i)));
+                        break;
+                    case OCCI_TYPECODE_VARCHAR:
+                    case OCCI_TYPECODE_VARCHAR2:
+                    case OCCI_TYPECODE_CHAR:
+                    case OCCI_TYPECODE_DATE:
+                    case OCI_TYPECODE_TIMESTAMP:
+                        rowResult.push_back(new MultiType<string>(resultSet->getString(i)));
+                        break;
+                    default:
+                        rowResult.push_back(NULL);
+                    }
                 }
 
-                switch (metaData[i-1].getInt(MetaData::ATTR_DATA_TYPE))
-                {
-                case OCCI_TYPECODE_INTEGER:
-                case OCCI_TYPECODE_SMALLINT:
-                    rowResult.push_back(new MultiType<int>(resultSet->getInt(i)));
-                    break;
-                case OCCI_TYPECODE_REAL:
-                case OCCI_TYPECODE_DOUBLE:
-                case OCCI_TYPECODE_BDOUBLE:
-                case OCCI_TYPECODE_FLOAT:
-                case OCCI_TYPECODE_BFLOAT:
-                case OCCI_TYPECODE_NUMBER:
-                case OCCI_TYPECODE_DECIMAL:
-                    rowResult.push_back(new MultiType<double>(resultSet->getDouble(i)));
-                    break;
-                case OCCI_TYPECODE_VARCHAR:
-                case OCCI_TYPECODE_VARCHAR2:
-                case OCCI_TYPECODE_CHAR:
-                case OCCI_TYPECODE_DATE:
-                case OCI_TYPECODE_TIMESTAMP:
-                    rowResult.push_back(new MultiType<string>(resultSet->getString(i)));
-                    break;
-                default:
-                    rowResult.push_back(NULL);
-                }
+                result.push_back(rowResult);
             }
-
-            result.push_back(rowResult);
         }
 
         statement->closeResultSet(resultSet);
@@ -175,7 +176,7 @@ vector<vector<MultiBase*> > DatabaseInterface::executeQuery(const string &query,
             }
         }
 
-        Print::PrintError("Databse error: " + exception.getMessage() + ", Code: " + to_string(exception.getErrorCode()));
+        Print::PrintError("Query Database error: " + exception.getMessage() + ", Code: " + to_string(exception.getErrorCode()));
         status = false;
         message = exception.what();
         return vector<vector<MultiBase*> >();
@@ -241,7 +242,7 @@ bool DatabaseInterface::executeUpdate(const string& update, string& message)
             }
         }
 
-        Print::PrintError("Databse error: " + exception.getMessage() + ", Code: " + to_string(exception.getErrorCode()));
+        Print::PrintError("Update Database error: " + exception.getMessage() + ", Code: " + to_string(exception.getErrorCode()));
 
         message = exception.what();
         return false;

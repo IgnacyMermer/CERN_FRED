@@ -6,6 +6,7 @@
 #include <iomanip>
 
 bool Print::verbose = false;
+bool Print::data = false;
 bool Print::logToFile = false;
 string Print::logFilePath;
 
@@ -66,6 +67,14 @@ void Print::PrintVerbose(const string& message)
     }
 }
 
+void Print::PrintData(const string& message)
+{
+    if (data)
+    {
+        Print::basicPrint(string(ANSI_COLOR_PURPLE) + "DATA" + ANSI_COLOR_RESET, message);
+    }
+}
+
 /*
  * Print functions with topic name before message, useful for debugging overlapping execution of topics
  */
@@ -100,6 +109,11 @@ void Print::PrintVerbose(string topic, const string& message)
 void Print::setVerbose(bool verbose)
 {
     Print::verbose = verbose;
+}
+
+void Print::setData(bool data)
+{
+    Print::data = data;
 }
 
 void Print::setLogFile(const string& filePath)

@@ -15,6 +15,7 @@ public:
     enum Type
     {
         SCA,
+        SCA_MFT,
         SWT,
         IC,
         CRORC,
@@ -31,6 +32,7 @@ public:
         vector<string> outVars; // OUT_VARs are the VARs that are published
 
         vector<string> message;
+        bool highWord=false;
         //bool subscribe;
     };
 

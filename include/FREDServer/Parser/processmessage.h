@@ -37,10 +37,13 @@ public:
 
     ProcessMessage(string message, int32_t placeId, bool useCru, Location::AlfEntry::Version alfVersion);
     ProcessMessage(map<string, vector<double> > inVars, int32_t placeId, GroupCommand* groupCommand, bool useCru, Location::AlfEntry::Version alfVersion);
+    ProcessMessage(Mapi* mapi, string input, bool useCru, Location::AlfEntry::Version alfVersion,timespec startTime);
     ProcessMessage(Mapi* mapi, string input, bool useCru, Location::AlfEntry::Version alfVersion);
+
     int32_t getMultiplicity();
     bool isCorrect();
-    vector<vector<unsigned long> > readbackValues(const string &message, Instructions::Instruction& instructions);
+    template <typename T>
+    vector<vector<T> > readbackValues(const string &message, Instructions::Instruction& instructions);
     vector<double> calculateReadbackResult(vector<vector<unsigned long> >& result, Instructions::Instruction& instructions);
     bool checkLink(string message, ChainTopic& chainTopic);
     void evaluateMessage(string message, ChainTopic& chainTopic, bool ignoreStatus = false);
@@ -48,7 +51,7 @@ public:
     void evaluateMapiMessage(string message, ChainTopic& chainTopic);
     vector<string> generateFullMessage(Instructions::Instruction& instructions);
     string valuesToString(vector<vector<unsigned long> > values, int32_t multiplicity, Instructions::Type type);
-    uint32_t getReturnWidth(Instructions::Type type);
+    uint32_t getReturnWidth(Instructions::Type type,bool highWord=false);
     void updateResponse(ChainTopic& chainTopic, string response, bool error);
     vector<string>* getPollPattern();
     bool getUseCru();

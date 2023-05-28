@@ -48,7 +48,7 @@ vector<string> Instructions::processConfigFile(string file)
             instruction.name = name;
 
             topics.push_back(name);
-
+            bool got_topic_type = false;
             for (size_t i = 0; i < subsection.size(); i++)
             {
                 string left = subsection[i].substr(0, subsection[i].find("="));
@@ -64,6 +64,10 @@ vector<string> Instructions::processConfigFile(string file)
                     {
                         instruction.type = Type::SCA;
                     }
+                    else if (right == "SCA_MFT")
+                    {
+                        instruction.type = Type::SCA_MFT;
+                    }
                     else if (right == "IC")
                     {
                         instruction.type = Type::IC;
@@ -77,6 +81,7 @@ vector<string> Instructions::processConfigFile(string file)
                         instruction.type = Type::CRU;
                     }
                     else throw runtime_error(this->path + " has invalid type name " + right + " in topic " + name);
+                    got_topic_type = true;
                 }
                 //else if (left == "SUBSCRIBE")
                 //{
@@ -103,6 +108,11 @@ vector<string> Instructions::processConfigFile(string file)
                     instruction.message = processSequenceFile(this->path.substr(0, this->path.find_last_of("/")) + "/" + right);
                     if (instruction.message.empty()) throw runtime_error("Sequence File in TOPIC " + name + " topic doesn't exist or is empty");
                 }
+                else if (left == "HIGH_WORD" && right == "TRUE")
+                {
+                    if(instruction.type != Type::SWT or !got_topic_type) throw runtime_error("HIGH_WORD is allowed only in SWT protocol! Topic: " + name + ". Check if protocol type is declared as first param.");
+                    instruction.highWord = true;
+                }
                 else throw runtime_error(this->path + " has invalid instruction name " + left + " in topic " + name + "!");
             }
 
@@ -114,6 +124,7 @@ vector<string> Instructions::processConfigFile(string file)
                 {
                     if (*it == "EQUATION") //EQUATION keyword for returining the result of the equation
                     {
+                        if (instruction.type == Type::SWT && instruction.highWord==true) throw runtime_error("The EQUATION in TOPIC " + instruction.name + " is prohibited in HIGH_WORD mode for SWT topic type!");
                         if (instruction.equation == "") throw runtime_error("The EQUATION in TOPIC " + instruction.name + " is published but no equation is provided!");
                     }
                     else throw runtime_error("OUT_VAR " + *it + " in TOPIC " + instruction.name + " string is published without being decleared in the sequence!");

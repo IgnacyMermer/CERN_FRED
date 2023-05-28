@@ -19,7 +19,7 @@ class LlaLock;
 class Queue
 {
 public:
-    Queue(Fred* fred);
+    Queue(Fred* fred, int bank);
     ~Queue();
 
     void newRequest(pair<ProcessMessage *, ChainTopic *> request);
@@ -30,6 +30,8 @@ public:
     LlaLock* getLlaLock();
     bool processing();
     void wakeUp();
+    static void clearQueue(Queue* queue);
+
 
 private:
     Fred* fred;
@@ -39,8 +41,8 @@ private:
     list<pair<ProcessMessage *, ChainTopic*> > stack;
     mutex stackMutex;
     LlaLock* llaLock;
+    int bank;
 
-    static void clearQueue(Queue* queue);
     bool checkLlaStartSession();
     void checkLlaStopSession();
 };

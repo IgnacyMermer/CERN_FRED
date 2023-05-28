@@ -27,6 +27,25 @@ Fred::Fred(bool parseOnly, map<string, string> config, string mainDirectory): AL
     this->fredDns = config["DNS"];
     this->databaseInterface = NULL;
 
+    if(config["BANK_COUNT"] != "")
+    {
+        if(isNumber(config["BANK_COUNT"]))
+        {
+            
+            this->bankCount = std::stoi(config["BANK_COUNT"]);
+            Print::PrintInfo("Starting with bank count of " + config["BANK_COUNT"]);
+        }
+        else
+        {
+            Print::PrintError("Only positive number can be used in BANK_COUNT parameter!");
+            exit(EXIT_FAILURE);
+        }
+    }
+    else
+    {
+        this->bankCount = 0;
+    }
+
     if (config["DB_CONN"] != "" && config["DB_USER"] != "" && config["DB_PASS"] != "")
     {
         Print::PrintInfo("Connecting to database " + config["DB_USER"] + ".");
@@ -82,6 +101,11 @@ Fred::~Fred()
     {
         delete this->databaseInterface;
     }
+
+    for (auto executor = this->queueExecutors.begin(); executor !=  this->queueExecutors.end(); executor++)
+    {
+        delete executor->second;
+    }
 }
 
 /*
@@ -93,7 +117,7 @@ map<string, string> Fred::readConfigFile()
     {
         vector<string> lines = Parser::readFile("fred.conf", "./config");
 
-        map<string, string> config = { { "NAME", "" }, { "DNS", "" }, { "DB_CONN", "" }, { "DB_USER", "" }, { "DB_PASS", "" } };
+        map<string, string> config = { { "NAME", "" }, { "DNS", "" }, { "DB_CONN", "" }, { "DB_USER", "" }, { "DB_PASS", "" }, {"BANK_COUNT", ""} };
 
         for (size_t i = 0; i < lines.size(); i++)
         {
@@ -159,6 +183,7 @@ void Fred::generateTopics()
         for (auto unit = units.begin(); unit != units.end(); unit++)
         {
             fredTopics.registerUnit(sections[i].getName(), *unit, sections[i].instructions);
+
         }
 
         vector<Groups::Group>& groups = sections[i].groups.getGroups();
@@ -242,6 +267,7 @@ bool Fred::commandLineArguments(int argc, char** argv)
     struct option long_options[] =
     {
         {"verbose", no_argument, NULL, 'v'},
+        {"data", no_argument, NULL, 'd'},
         {"log", required_argument, NULL, 'l'},
         {"help", no_argument, NULL, 'h'},
         {"parse", no_argument, NULL, 'p'},
@@ -252,13 +278,17 @@ bool Fred::commandLineArguments(int argc, char** argv)
     string logFilePath;
 
     int c;
-    while ((c = getopt_long(argc, argv, "vl:hp" ,long_options, 0)) != -1)
+    while ((c = getopt_long(argc, argv, "vdl:hp" ,long_options, 0)) != -1)
     {
         switch (c)
         {
             case 'v':
                 Print::setVerbose(true);
                 Print::PrintWarning("FRED is verbose!");
+                break;
+            case 'd':
+                Print::setData(true);
+                Print::PrintWarning("FRED will display data!");
                 break;
             case 'l':
                 if (!optarg)
@@ -315,6 +345,7 @@ void Fred::printHelp()
     cout << "Usage: FREDServer [OPTIONS]\n\n"
         << "Optional arguments:\n"
         << "\t-v, --verbose\t\t\t\tVerbose log\n"
+        << "\t-d, --data\t\t\t\tData log\n"
         << "\t-l, --log\t\t<file>\t\tLog output to file <file>\n"
         << "\t-p, --parse\t\t\t\tParse only mode\n"
         << "\t-h, --help\t\t\t\tShow this help\n";
@@ -328,4 +359,13 @@ void Fred::Start()
     {
         usleep(100000);
     }
+}
+
+bool Fred::isNumber(string text)
+{
+    for (char const &ch : text) {
+        if (std::isdigit(ch) == 0)
+            return false;
+    }
+    return true;
 }

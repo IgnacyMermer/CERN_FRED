@@ -4,83 +4,82 @@
 #include "Alfred/print.h"
 #include "Fred/llalock.h"
 
-Queue::Queue(Fred* fred)
+Queue::Queue(Fred* fred, int bank)
 {
     this->fred = fred;
     this->isFinished = false;
     this->isProcessing = false;
     this->llaLock = NULL;
     this->queueLock = new QueueLock;
-    this->queueThread = new thread(clearQueue, this);
+    this->bank = bank;
+
+    if (this->fred->queueExecutors.find(bank) == this->fred->queueExecutors.end()) 
+    {
+        this->fred->queueExecutors[bank] = new QueueExecutor(this->fred);
+
+    } 
+
 }
 
 Queue::~Queue()
 {
     this->isFinished = true;
     this->queueLock->notify();
-    queueThread->join();
-    delete queueThread;
+    // if(this->fred->queueExecutors[bank] != nullptr)
+    // {
+    //     delete this->fred->queueExecutors[bank];
+    //     this->fred->queueExecutors[bank]=nullptr;
+    // }
+    // queueThread->join();
+    
+    // delete queueThread;
     delete queueLock;
 }
 
 void Queue::clearQueue(Queue *queue)
 {
-    while (1)
+    if (queue->isFinished)
     {
-        if (queue->isFinished)
+        return;
+    }
+
+    if(queue->stackEmpty())
+    {
+        return;
+    }
+    // while (!queue->stackEmpty())
+    // {
+        queue->isProcessing = true;
+
+        pair<ProcessMessage*, ChainTopic*> request;
         {
-            return;
+            lock_guard<mutex> lockGuard(queue->stackMutex);
+            request = queue->stack.front();
+            queue->stack.pop_front();
         }
+        //do processing
+        AlfRpcInfo* alfLink = request.first->getUseCru() ? request.second->alfLink.first : request.second->alfLink.second;
+        alfLink->setTransaction(request);  //CAN bus backup
 
-        queue->queueLock->wait();
+        Print::PrintVerbose(request.second->name, "Parsing message");
 
-        while (!queue->stackEmpty())
+        vector<string> fullMessage;
+
+        try
         {
-            queue->isProcessing = true;
-
-            pair<ProcessMessage*, ChainTopic*> request;
+            if (request.second->mapi == NULL)
             {
-                lock_guard<mutex> lockGuard(queue->stackMutex);
-                request = queue->stack.front();
-                queue->stack.pop_front();
+                fullMessage = request.first->generateFullMessage(*request.second->instruction);
             }
-            //do processing
-            AlfRpcInfo* alfLink = request.first->getUseCru() ? request.second->alfLink.first : request.second->alfLink.second;
-            alfLink->setTransaction(request);  //CAN bus backup
-
-            Print::PrintVerbose(request.second->name, "Parsing message");
-
-            vector<string> fullMessage;
-
-            try
+            else
             {
-                if (request.second->mapi == NULL)
-                {
-                    fullMessage = request.first->generateFullMessage(*request.second->instruction);
-                }
-                else
-                {
-                    fullMessage = vector<string>({ request.first->generateMapiMessage() });
-                }
+                fullMessage = vector<string>({ request.first->generateMapiMessage() });
             }
-            catch (exception& e)
-            {
-                string errorMessage = e.what();
-                Print::PrintError(request.second->name, errorMessage);
-
-                request.second->error->Update(errorMessage);
-                Print::PrintError(request.second->name, "Updating error service!");
-
-                queue->isProcessing = false;
-                continue;
-            }
-
             if (request.second->mapi != NULL && request.second->mapi->noRpcRequest)
             {
                 Print::PrintVerbose(request.second->name, "Skipping RPC request");
                 request.second->mapi->noRpcRequest = false; //reset noRpcRequest 
                 queue->isProcessing = false;
-                continue;
             }
             else
             {
@@ -118,9 +117,22 @@ void Queue::clearQueue(Queue *queue)
 
             queue->isProcessing = false;
         }
+        catch (exception& e)
+        {
+            string errorMessage = e.what();
+            Print::PrintError(request.second->name, errorMessage);
 
-        queue->checkLlaStopSession(); //if no request in any queue, stop LLA session
-    }
+            request.second->error->Update(errorMessage);
+            Print::PrintError(request.second->name, "Updating error service!");
+
+            queue->isProcessing = false;
+        }
+
+        
+    // }
+
+    queue->checkLlaStopSession(); //if no request in any queue, stop LLA session
+    
 }
 
 void Queue::newRequest(pair<ProcessMessage*, ChainTopic*> request)
@@ -130,7 +142,7 @@ void Queue::newRequest(pair<ProcessMessage*, ChainTopic*> request)
 
         stack.push_back(request);
     }
-
+    this->fred->queueExecutors[bank]->newRequest(this);
     queueLock->notify();
 }
 

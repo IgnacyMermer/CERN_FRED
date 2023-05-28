@@ -23,7 +23,7 @@ class AlfClients
 public:
     struct Nodes
     {
-        AlfRpcInfo *sca, *swt, *ic, *crorc, *cru;
+        AlfRpcInfo *sca, *swt, *ic, *crorc, *cru, *sca_mft;
         Queue *queue;
     };
 
@@ -42,6 +42,7 @@ private:
     map<string, map<int32_t, map<int32_t, map<int32_t, Nodes> > > > clients; //ALF,SERIAL,ENDPOINT,LINK
     map<string, map<int32_t, CruNodes> > cruClients; //ALF,SERIAL
     map<string, map<int32_t, LlaNodes> > llaClients; //ALF,SERIAL
+    int currentBank;
     Fred* fred;
 
 public:
