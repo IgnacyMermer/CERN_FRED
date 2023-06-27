@@ -25,7 +25,10 @@ private:
 	
 	inline std::string getScaOperationValue(int scaOpType, int length, std::string alfResponsePart)
 	{
-		if (length == 1)
+		if( scaOpType == SCA_SVL_CONNECT){
+			return "0";
+		}
+		else if (length == 1)
 		{
 			return Utility::splitString(alfResponsePart, ",")[1];
 		}
@@ -57,7 +60,17 @@ protected:
 public:
 
 	static const uint8_t CTRL_R_ID = 0xD1;
+        static const uint8_t CTRL_W_CRB = 0x02;
+        static const uint8_t CTRL_R_CRB = 0x03;
+        static const uint8_t CTRL_W_CRC = 0x04;
+        static const uint8_t CTRL_R_CRC = 0x05;
+        static const uint8_t CTRL_W_CRD = 0x06;
+        static const uint8_t CTRL_R_CRD = 0x07;
 	static const uint8_t SCA_WAIT = 0xFF;
+        static const uint8_t SCA_SC_RESET = 0xFF;
+        static const uint8_t SCA_SVL_RESET = 0xFF;
+        static const uint8_t SCA_SVL_CONNECT = 0xFF;
+
 	// I2C Channels (not used)
 	static const uint8_t I2C0 = 0x03;
 	static const uint8_t I2C1 = 0x04;
@@ -161,7 +174,6 @@ public:
 	{
 		std::vector<tuple<int,string>> deconstruction;
 		std::vector<string> splitAlfResponse = Utility::splitString(alfResponse, "\n");
-	
 		if (splitAlfResponse[0].find("success") != std::string::npos)
 		{
 			int currentPosition = 1; // Ignore first line (expect [success|failure])
@@ -178,7 +190,6 @@ public:
 				deconstruction.emplace_back(std::make_tuple(scaOperationType, responseData));
 				currentPosition = endCurrentPosition; // for the next time around the loop, start well (remeber off-by-one)
 			}
-	
 		}
 		else
 		{
@@ -187,7 +198,7 @@ public:
 		}
 		return deconstruction;
 	}
-	
+
 	inline void add_CTRL_R_ID(uint8_t trid = 0)
 	{
 		trid = trid ? trid : rn();
@@ -195,14 +206,63 @@ public:
 		std::tuple<int, int> op = std::make_tuple(CTRL_R_ID, 1);
 		sequenceConstruction.emplace_back(op);
 	}
-	
+	inline void add_CTRL_W_CRB(uint32_t data, uint8_t trid = 0){
+                trid = trid ? trid : rn();
+                sequence.append(constructPacket(0,trid,1,CTRL_W_CRB,data));
+                std::tuple<int,int> op = std::make_tuple(CTRL_W_CRB, 1);
+                sequenceConstruction.emplace_back(op);
+        }
+        inline void add_CTRL_W_CRC(uint32_t data, uint8_t trid = 0){
+                trid = trid ? trid : rn();
+                sequence.append(constructPacket(0,trid,1,CTRL_W_CRC,data));
+                std::tuple<int,int> op = std::make_tuple(CTRL_W_CRC, 1);
+                sequenceConstruction.emplace_back(op);
+        }
+        inline void add_CTRL_W_CRD(uint32_t data,uint8_t trid = 0){
+                trid = trid ? trid : rn();
+                sequence.append(constructPacket(0,trid,1,CTRL_W_CRD,data));
+                std::tuple<int,int> op = std::make_tuple(CTRL_W_CRD, 1);
+                sequenceConstruction.emplace_back(op);
+        }
+	inline void add_CTRL_R_CRB(uint8_t trid = 0){
+                trid = trid ? trid : rn();
+                sequence.append(constructPacket(0,trid,1,CTRL_R_CRB));
+                std::tuple<int,int> op = std::make_tuple(CTRL_R_CRB, 1);
+                sequenceConstruction.emplace_back(op);
+        }
+        inline void add_CTRL_R_CRC(uint8_t trid = 0){
+                trid = trid ? trid : rn();
+                sequence.append(constructPacket(0,trid,1,CTRL_R_CRC));
+                std::tuple<int,int> op = std::make_tuple(CTRL_R_CRC, 1);
+                sequenceConstruction.emplace_back(op);
+        }
+        inline void add_CTRL_R_CRD(uint8_t trid = 0 ){
+                trid = trid ? trid : rn();
+                sequence.append(constructPacket(0,trid,1,CTRL_R_CRD));
+                std::tuple<int,int> op = std::make_tuple(CTRL_R_CRD, 1);
+                sequenceConstruction.emplace_back(op);
+        }
+                                                                                    
+                                                                                                                                                                                                           
+        inline void add_SC_RESET(){
+                sequence.append("sc_reset\n");
+        }
+        inline void add_SVL_RESET(){
+                sequence.append("svl_reset\n");
+        }
+        inline void add_SVL_CONNECT(){
+                sequence.append("svl_connect\n");
+                std::tuple<int, int> op = std::make_tuple(SCA_SVL_CONNECT, 1);
+                sequenceConstruction.emplace_back(op);
+        }
+                                                                                                                                	
 	inline void add_SCA_WAIT(int waitDuration)
 	{
 		sequence.append(to_string(waitDuration) + ",wait\n");
 		std::tuple<int, int> op = std::make_tuple(SCA_WAIT, 1);
 		sequenceConstruction.emplace_back(op);
 	}
-	
+
 	/**
   	* Start specific protocol definitions
   	*
@@ -265,7 +325,6 @@ public:
 		trid = trid ? trid : rn();
 	//	uint8_t trid = 0 = rn();
 		// Have to set NBYTE in I2C CONTROL register
-		sequence.append(constructPacket(ch, trid, 2, I2C_W_CTRL, (ctrlByte << 24)));
 		uint8_t len = (ctrlByte >> 2) & 0x1f;
 		int lines;
 		if (len > 0)
@@ -292,6 +351,43 @@ public:
 		sequence.append(constructPacket(ch, ++trid, 4, I2C_M_7B_W, (addr << 24)));
 	
 		int x = I2C_M_7B_W;
+		std::tuple<int, int> op = std::make_tuple(x, lines);
+		sequenceConstruction.emplace_back(op);
+	}
+
+	inline void add_I2C_M_7B_W(uint8_t ch, uint8_t addr, uint8_t ctrlByte, uint32_t data0, uint32_t data1, uint32_t data2, uint32_t data3,bool set_ctrl=true, uint8_t trid = 0)
+	{
+		trid = trid ? trid : rn();
+	//	uint8_t trid = 0 = rn();
+		// Have to set NBYTE in I2C CONTROL register
+		if(set_ctrl) sequence.append(constructPacket(ch, trid, 2, I2C_W_CTRL, (ctrlByte << 24)));                
+		uint8_t len = (ctrlByte >> 2) & 0x1f;
+		int lines;
+		if (len > 0)
+		{
+			lines = 3;
+			sequence.append(constructPacket(ch, ++trid, 4, I2C_W_DATA0, data0));
+		}
+		if (len > 4)
+		{
+			lines = 4;
+			sequence.append(constructPacket(ch, ++trid, 4, I2C_W_DATA1, data1));
+		}
+		if (len > 8)
+		{
+			lines = 5;
+			sequence.append(constructPacket(ch, ++trid, 4, I2C_W_DATA2, data2));
+		}
+		if (len > 12)
+		{
+			lines = 6;
+			sequence.append(constructPacket(ch, ++trid, 4, I2C_W_DATA3, data3));
+		}
+		// Initiates I2C write
+		sequence.append(constructPacket(ch, ++trid, 4, I2C_M_7B_W, (addr << 24)));
+	
+		int x = I2C_M_7B_W;
+		if(!set_ctrl) lines--;
 		std::tuple<int, int> op = std::make_tuple(x, lines);
 		sequenceConstruction.emplace_back(op);
 	}
@@ -336,7 +432,13 @@ public:
 		std::tuple<int, int> op = std::make_tuple(I2C_W_DATA0, 1);
 		sequenceConstruction.emplace_back(op);
 	}
-	
+        inline void add_I2C_R_DATA0(uint8_t ch, uint8_t trid = 0){
+                trid = trid ? trid : rn();
+                sequence.append(constructPacket(ch, trid, 4, I2C_R_DATA0));
+                std::tuple<int, int> op = std::make_tuple(I2C_R_DATA0, 1);
+                sequenceConstruction.emplace_back(op);
+        }
+	                                                                                	
 	inline void add_ADC_GO(uint8_t trid = 0)
 	{
 		trid = trid ? trid : rn();
