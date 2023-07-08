@@ -1,11 +1,22 @@
 image: gitlab-registry.cern.ch/alialfred/fredserver:latest
-
+variables:
+  GIT_CLEAN_FLAGS: -ffdx -e target_directory/
 stages:
+  - prepare_core
   - env_build
   - build
   - parser
   - run
-
+prepare_core:
+  stage: prepare_core # Copy contents of directory to core
+  script:
+    - rsync -Rrl . ./core # Copy files with symlinks (lib symlinks)
+    - ls
+    - ls core
+  artifacts:
+    expire_in: 1 hour
+    paths:
+      - ./core/*
 ALFDummies:
   stage: env_build
   script:
@@ -29,6 +40,7 @@ ALFDummies:
     - cmake3 .
     - make all
   artifacts:
+    expire_in: 1 hour
     paths:
       - ./ALFDummies/FLP001/ALFDummy/bin/ALFDummy
       - ./ALFDummies/FLP042/ALFDummy/bin/ALFDummy
@@ -41,43 +53,75 @@ dimclient:
     - source scl_source enable devtoolset-7 || true
     - cmake3 .
     - make all
+
   artifacts:
+    expire_in: 1 hour
     paths:
       - ./DIMClient/bin/DIMClient
-
 build:
   stage: build
   script:
     - yum install -y libaio
     - source scl_source enable devtoolset-7 || true
-    - cmake3 .
+    #----------- Build basic examples ----------
+    - git clone https://project_165118_bot_151e1eacb4cf0f87acd133a7436e0ebe:glpat-3q3d1HzGyzMQTm2Qxyzj@gitlab.cern.ch/alialfred/fred_example.git
+    - cd fred_example
+    - cp -r ../core ./
+    - ls ../core
+    - ls core/lib
+    - cd core 
+    - cmake3 . 
     - make all
+    #----------- Build FRED with MAPI examples ----------
+    - cd ../..
+    - git clone https://project_165119_bot_0dcb562c2297779c0e3fa874f7d98f53:glpat-TCFab2N-CmdTYs1rqtPs@gitlab.cern.ch/alialfred/fred_mapiexample.git
+    - cd fred_mapiexample
+    - cp -r ../core ./
+    - cd core 
+    - cmake3 . -DMAPI=1
+    - make all
+
   artifacts:
+    expire_in: 1 hour
     paths:
-      - ../bin/FREDServer
-      - ./lib/libAlfred.so
+      - ./fred_example/*
+      - ./fred_mapiexample/*
 
 parser:
   stage: parser
   script:
     - yum install -y libaio
-    - ./CI/run_dns.sh
+    - cd fred_example
+    - ./core/CI/run_dns.sh
     - sleep 10
-    - ./CI/parser.sh
+    - ./core/CI/parser.sh
 
-run:
+run_basic:
   stage: run
   script:
+    - cd fred_example
     - yum install -y libaio
-    - ./CI/run_dns.sh
+    - ./core/CI/run_dns.sh
     - sleep 10
-    - ./CI/run_alfdummies.sh
+    - ./core/CI/run_alfdummies.sh
     - sleep 10
-    - cp -r ./examples/config/ .
-    - cp -r ./examples/SCA/* .
-    - cp -r ./examples/SWT/* .
     - sed -i 's/dimdnsexample.cern.ch/localhost/g' ./config/fred.conf
     - bin/FREDServer --v &
     - sleep 10
     - ps
-    - ./CI/run_dimclient.sh
+    - ./core/CI/run_dimclient.sh
+
+run_mapi:
+  stage: run
+  script:
+    - cd fred_mapiexample
+    - yum install -y libaio
+    - ./core/CI/run_dns.sh
+    - sleep 10
+    - ./core/CI/run_alfdummies.sh
+    - sleep 10
+    - sed -i 's/dimdnsexample.cern.ch/localhost/g' ./config/fred.conf
+    - bin/FREDServer --v &
+    - sleep 10
+    - ps
+    - ./core/CI/run_mapidimclient.sh

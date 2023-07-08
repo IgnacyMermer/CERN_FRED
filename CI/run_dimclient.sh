@@ -2,55 +2,64 @@
 
 echo "Run DIMClient Bash script started"
 
-cd /builds/alialfred/FREDServer/DIMClient
+cd ../DIMClient
 export DIM_DNS_NODE=localhost
-
-bin/DIMClient --F --t FRED1/POWER_BOARDS/POWERUNIT1/INIT
+# SWT test
+topic="FRED1/POWER_BOARDS/POWERUNIT1/INIT"
+bin/DIMClient --F --t $topic
 if [ $? -ne 0 ]
 then
-  echo "FRED TOPIC test failed"
+  echo "[$topic] FRED TOPIC test failed"
   exit 1
 else
-  echo "FRED TOPIC test succeeded
+  echo "[$topic] FRED TOPIC test succeeded"
   sleep 5
 fi
 
-bin/DIMClient --F --t FRED1/POWER_BOARDS/POWERUNIT4/VOLTAGE/READ --m 33
+#SWT Equation test
+topic="FRED1/POWER_BOARDS/POWERUNIT4/VOLTAGE/READ"
+bin/DIMClient --F --t $topic --m 33
 if [ $? -ne 0 ]
 then
-  echo "FRED TOPIC test failed"
+  echo "[$topic] FRED TOPIC test failed"
   exit 1
 else
-  echo "FRED TOPIC test succeeded
+  echo "[$topic] FRED TOPIC test succeeded"
   sleep 5
 fi
 
-bin/DIMClient --F --t FRED1/RU_SCA/ITSRU0/SCATEMP/READ
+#SCA test 
+topic="FRED1/RU_SCA/ITSRU0/SCATEMP/READ"
+bin/DIMClient --F --t $topic
 if [ $? -ne 0 ]
 then
-  echo "FRED TOPIC test failed"
+  echo "[$topic] FRED TOPIC test failed"
   exit 1
 else
-  echo "FRED TOPIC test succeeded
+  echo "[$topic] FRED TOPIC test succeeded"
   sleep 5
 fi
 
-bin/DIMClient --F --t FRED1/INNER_BARREL/STAVES/READ_ALL
+#GROUP topic test (inner_barrel.section)
+topic="FRED1/INNER_BARREL/STAVES/READ_ALL"
+bin/DIMClient --F --t $topic
 if [ $? -ne 0 ]
 then
-  echo "FRED TOPIC test failed"
+  echo "[$topic] FRED TOPIC test failed"
   exit 1
 else
-  echo "FRED TOPIC test succeeded
+  echo "[$topic] FRED TOPIC test succeeded"
   sleep 5
 fi
 
-bin/DIMClient --F --t FRED1/RU_SCA/ITSRU0/SCATEMP/READ --m 123456
+#Test for wrong input - READ should have empty string as input
+topic="FRED1/RU_SCA/ITSRU0/SCATEMP/READ"
+bin/DIMClient --F --t $topic --m 123456
 if [ $? -ne 0 ]
 then
-  echo "FRED TOPIC error test succeeded"
+  echo "[$topic] FRED TOPIC error test succeeded"
   exit 0
 else
-  echo "FRED TOPIC error test failed"
+  echo "[$topic] FRED TOPIC error test failed"
   exit 1
 fi
