@@ -1,6 +1,14 @@
 # FREDServer
 
 ## Version History
+* v3.0 - New features,Changes:
+  - Added support for full size (80bit) return value of SWT protocol messages in standard topics (HIGH_WORD parameter in topic config, EQUATION cannot be used in this mode)
+  - Added support to limit how many threads should be created by FRED queues (BANK_COUNT parameter in config)
+  - New Logging option - PrintData. Logging with Data option is enabled after passing `-d/--data` parameter during start of FREDServer
+  - **Modified implementation of MAPI code, Custom code requires own repository with FREDServer as submodule named `core`, for usage, see [Mapi Example](https://gitlab.cern.ch/alialfred/fred_mapiexample) , [Standard topic Example](https://gitlab.cern.ch/alialfred/fred_example)**
+  - Extended examples for every supported ALF topic, Added examples for Indefinite MAPI
+
+* v2.5 - Latest version which supports User code in main.cpp
 * v2.4 - Breaks backwards compatibility with ALF version < 0.14.0 (FLP Suite v0.18.0). Changes:
   - FRED configuration files adjusted for changes in ALF services
   - Added support for new CRU (User Space) Register_READ/WRITE services
@@ -56,41 +64,45 @@
 cmake3 devtoolset-7
 
 ## Installation
-
+Clone core repository
 ```
-git clone https://gitlab.cern.ch/alialfred/FREDServer.git
+git clone https://gitlab.cern.ch/alialfred/FREDServer.git core
 
-cd FREDServer
+cd core
 
 source scl_source enable devtoolset-7
-
-# Before building, you can add your MAPI, including adding the lines to 'main.cpp'
-
+```
+If using MAPI:
+```
+cmake3 . -DMAPI=1
+```
+If not:
+```
 cmake3 .
-
+```
+Finally build application
+```
 make all
 ```
 
 ## Required Actions
 
-Look into the 'examples' directory. This contains some examples of the required file structure for FRED to work, which must be present in the working directory when running FREDServer binary.
+Look into the `Mapi Example` and `Standard topic example` repositories.
+This repositories contains some examples of th required file structure for FRED to work with corresponding README for each example. Links to this examples are located at the end of this README.
 
 1. Create 'config/fred.conf' with your FREDServer name, and the network address of your DIM DNS server (nominally hosted on the same machine that runs FREDServer)
 2. Create 'sections', 'boards', 'boards/yourdevice', and 'boards/yourdevice/commands' directories
 3. Create config files corresponding to your hardware design, including 'sections/yourgenericdevice.section', 'boards/yourdevice/yourdevice.conf'
 4. Create sequence files that correspond to the instruction sequence to be executed by your hardware in e.g. 'boards/yourdevice/commands/readsequence.sqc', etc.
 
+
+
 ## Run FRED
 
 You have to be in the directory containing your configs, then:
 ```
-/path/to/bin/FREDServer [--help] [--log <path>] [--parser] [--verbose]
+/path/to/bin/FREDServer [--help] [--log <path>] [--parser] [--verbose] [--data]
 ```
 ## Examples
 
-FREDServer/examples contains:
-*  SCA, SWT and MAPI examples
-*  config directory for FRED configuration
-
-To use an example with your own instance of FRED, copy recursively the content of the desired example and the 
-config directory to FREDServer directory. (Be sure to check the file contents and modify them according to your setup.)
+Examples are available at [Mapi Example](https://gitlab.cern.ch/alialfred/fred_mapiexample) , [Standard topic Example](https://gitlab.cern.ch/alialfred/fred_example). You can use [ALF Simulator](https://gitlab.cern.ch/alice-dcs-kosiceteam/alf-simulator) for testing FRED without real hardware / ALF.
