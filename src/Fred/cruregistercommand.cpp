@@ -64,7 +64,16 @@ const void* CruRegisterCommand::Execution(void *value)
     }
     else */if (this->type == ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER)
     {
-        if (splitted.size() != 11)
+        // validate segment count while ignoring comments
+        int segmentsCount = 0;
+        for (auto & segment : splitted)
+        {
+            if (segment.find('#') == string::npos)
+            {
+                segmentsCount++;
+            }
+        }
+        if (segmentsCount != 15)
         {
             Print::PrintError(name, "Invalid number of arguments received for PATTERN PLAYER");
             return NULL;
@@ -116,27 +125,72 @@ void CruRegisterCommand::executeRead(vector<string>& message) // 0 - ADDR
     newRequest(make_pair(request.str(), rpcInfo));
 }*/
 
-void CruRegisterCommand::executePatternPlayer(vector<string>& message) // 0 - SYNC_P, 1 - RESET_P, 2 - IDLE_P, 3 - SYNC_L, 4 - SYNC_D, 5 - RESET_L, 6 - RESET_TS, 7 - SYNC_TS, 8 - SYNC_S, 9 - TRIG_S, 10 - TRIG_R
+#define SKIP_COMMENT while (message[position].find('#') != string::npos) { position++; }
+
+void CruRegisterCommand::executePatternPlayer(vector<string>& message) // pat0, pat1, pat2, pat3, pat1, pat1, pat2, pat3, pat1, pat2, pat3, pat2, execute_pat1, execute_pat1, execute_pat2
 {
     stringstream request;
 
     try
     {
-        uint128_t syncPattern = Utility::stringToLargeNumber(message[0]);
-        uint128_t resetPattern = Utility::stringToLargeNumber(message[1]);
-        uint128_t idlePattern = Utility::stringToLargeNumber(message[2]);
-        uint32_t syncLength = Utility::stringToNumber(message[3]);
-        uint32_t syncDelay = Utility::stringToNumber(message[4]);
-        uint32_t resetLength = Utility::stringToNumber(message[5]);
-        uint32_t resetTriggerSelect = Utility::stringToNumber(message[6]);
-        uint32_t syncTriggerSelect = Utility::stringToNumber(message[7]);
-        bool syncAtStart = message[8] == "true";
-        bool triggerSync = message[9] == "true";
-        bool triggerReset = message[10] == "true";
+        int position = 0;
 
-        request << Utility::largeNumberToHexString(syncPattern) << "\n" << Utility::largeNumberToHexString(resetPattern) << "\n" << Utility::largeNumberToHexString(idlePattern)
-                << "\n" << to_string(syncLength) << "\n" << to_string(syncDelay) << "\n" << to_string(resetLength) << "\n" << to_string(resetTriggerSelect) << "\n" << to_string(syncTriggerSelect)
-                << "\n" << (syncAtStart ? "true" : "false") << "\n" << (triggerSync ? "true" : "false") << "\n" << (triggerReset ? "true" : "false");
+        // patterns
+        SKIP_COMMENT
+        uint128_t pat0 = Utility::stringToLargeNumber(message[position++]);
+        SKIP_COMMENT
+        uint128_t pat1 = Utility::stringToLargeNumber(message[position++]);
+        SKIP_COMMENT
+        uint128_t pat2 = Utility::stringToLargeNumber(message[position++]);
+        SKIP_COMMENT
+        uint128_t pat3 = Utility::stringToLargeNumber(message[position++]);
+
+        // length, delay, length, length
+        SKIP_COMMENT
+        uint32_t pat1Length = Utility::stringToNumber(message[position++]);
+        SKIP_COMMENT
+        uint32_t pat1Delay = Utility::stringToNumber(message[position++]);
+        SKIP_COMMENT
+        uint32_t pat2Length = Utility::stringToNumber(message[position++]);
+        SKIP_COMMENT
+        uint32_t pat3Length = Utility::stringToNumber(message[position++]);
+
+        // triggers
+        SKIP_COMMENT
+        uint32_t pat1Trigger = Utility::stringToNumber(message[position++]);
+        SKIP_COMMENT
+        uint32_t pat2Trigger = Utility::stringToNumber(message[position++]);
+        SKIP_COMMENT
+        uint32_t pat3Trigger = Utility::stringToNumber(message[position++]);
+
+        // pat2 TF ORBIT BC
+        SKIP_COMMENT
+        uint32_t pat2TfOrbitBc = Utility::stringToNumber(message[position++]);
+
+        // execution
+        SKIP_COMMENT
+        bool pat1ExecuteAtStart = message[position++] == "true";
+        SKIP_COMMENT
+        bool pat1ExecuteNow = message[position++] == "true";
+        SKIP_COMMENT
+        bool pat2ExecuteNow = message[position++] == "true";
+
+        request
+                << Utility::largeNumberToHexString(pat0) << "\n"
+                << Utility::largeNumberToHexString(pat1) << "\n"
+                << Utility::largeNumberToHexString(pat2) << "\n"
+                << Utility::largeNumberToHexString(pat3) << "\n"
+                << to_string(pat1Length) << "\n"
+                << to_string(pat1Delay) << "\n"
+                << to_string(pat2Length) << "\n"
+                << to_string(pat3Length) << "\n"
+                << to_string(pat1Trigger) << "\n"
+                << to_string(pat2Trigger) << "\n"
+                << to_string(pat3Trigger) << "\n"
+                << to_string(pat2TfOrbitBc) << "\n"
+                << (pat1ExecuteAtStart ? "true" : "false") << "\n"
+                << (pat1ExecuteNow ? "true" : "false") << "\n"
+                << (pat2ExecuteNow ? "true" : "false");
     }
     catch (invalid_argument& e)
     {
