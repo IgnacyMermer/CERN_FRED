@@ -1,6 +1,7 @@
 # FREDServer
 
 ## Version History
+* v3.1 - Updates PATTERN_PLAYER for ALF compatibility [v0.18.0](https://github.com/AliceO2Group/ALF/releases/tag/v0.18.0)
 * v3.0 - New features,Changes:
   - Added support for full size (80bit) return value of SWT protocol messages in standard topics (HIGH_WORD parameter in topic config, EQUATION cannot be used in this mode)
   - Added support to limit how many threads should be created by FRED queues (BANK_COUNT parameter in config)
