@@ -1,0 +1,65 @@
+#include "dic.hxx"
+
+#include <future>
+#include <iostream>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
+
+constexpr size_t N_THREADS = 12;
+constexpr size_t N_SERVICES_PER_THREAD = 12;
+
+class RpcClientInt : public DimRpcInfo {
+private:
+    std::promise<int> m_promise;
+
+    void rpcInfoHandler()
+    {
+        const int reply = getInt();
+        m_promise.set_value(reply);
+    }
+
+public:
+    RpcClientInt(char* name, int timeout, int nolink, std::promise<int> promise)
+        : DimRpcInfo(name, timeout, nolink)
+        , m_promise(std::move(promise)) {};
+};
+
+int main(int argc, char* argv[])
+{
+    std::mutex outMutex;
+
+    for (size_t i = 0; i < N_THREADS; ++i) {
+        std::thread([=, &outMutex]() {
+            std::vector<std::unique_ptr<RpcClientInt>> services;
+            std::vector<std::future<int>> futures;
+
+            for (size_t j = 0; j < N_SERVICES_PER_THREAD; ++j) {
+                const int value = i * N_SERVICES_PER_THREAD + j;
+
+                std::promise<int> promise;
+                std::future<int> future = promise.get_future();
+
+                std::string service_name = "RPCSERVER/" + std::to_string(value);
+                int no_const_value = value;
+
+                services.emplace_back(std::make_unique<RpcClientInt>(service_name.data(), 1, -value, std::move(promise)));
+                services.back()->setData(no_const_value);
+
+                futures.emplace_back(std::move(future));
+            }
+
+            for (auto& f : futures) {
+                std::scoped_lock lock(outMutex);
+                std::cout << f.get() << std::endl;
+            }
+        }).detach();
+    }
+
+    while (1)
+        pause();
+
+    return 0;
+}

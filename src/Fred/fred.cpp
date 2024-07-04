@@ -91,6 +91,7 @@ Fred::Fred(bool parseOnly, map<string, string> config, string mainDirectory): AL
     generateAlfs();
     generateTopics();
     checkAlfs();
+    Print::PrintInfo("test2");
 
     Print::PrintInfo("FRED running.");
 }

@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.1)
-set(CMAKE_CXX_STANDARD 17)
+#set(CMAKE_CXX_STANDARD 17)
 project(FREDServer)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include/FREDServer include include/occi)
+include_directories(dim)
 
 if (APPLE)
     link_directories(/usr/local/lib /usr/local/lib/occi)
@@ -23,8 +26,8 @@ set(ALFRED_SOURCES
 		"src/Alfred/rpc.cpp"
 		"src/Alfred/rpcinfo.cpp"
 		"src/Alfred/service.cpp"
-                "src/Alfred/dimutilities.cpp"
-                "src/Alfred/queuelock.cpp"
+        "src/Alfred/dimutilities.cpp"
+        "src/Alfred/queuelock.cpp"
 	)
 
 add_library(Alfred SHARED ${ALFRED_SOURCES})

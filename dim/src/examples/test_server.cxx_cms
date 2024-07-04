@@ -1,0 +1,38 @@
+#include "dis.hxx"
+
+#include <memory>
+#include <string>
+#include <vector>
+
+class RpcServiceInt : public DimRpc {
+private:
+    void rpcHandler()
+    {
+        int value = getInt();
+        value++;
+        setData(value);
+    }
+
+public:
+    RpcServiceInt(const std::string& name)
+        : DimRpc(name.data(), "I", "I")
+    {
+    }
+};
+
+int main(int argc, char* argv[])
+{
+    using namespace std::string_literals;
+
+    std::vector<std::unique_ptr<RpcServiceInt>> services;
+
+    for (size_t i = 0; i <= 144; ++i)
+        services.emplace_back(std::make_unique<RpcServiceInt>("RPCSERVER/"s + std::to_string(i)));
+
+    DimServer::start("RPCSERVER");
+
+    while (1)
+        pause();
+
+    return 0;
+}
