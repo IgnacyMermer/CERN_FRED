@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include/FREDServer include include/occi)
-include_directories(dim)
+include_directories(${CMAKE_SOURCE_DIR}/dim/dim)
 
 if (APPLE)
     link_directories(/usr/local/lib /usr/local/lib/occi)
@@ -93,7 +93,9 @@ else ()
 endif ()    
 
 if (APPLE)
-    target_link_libraries(FREDServer Alfred clntsh occi clntshcore nnz19)
+    target_link_libraries(FREDServer Alfred clntsh occi clntshcore nnz19 ${CMAKE_SOURCE_DIR}/dim/linux/libdim.a)
 else ()
-    target_link_libraries(FREDServer Alfred clntsh occi clntshcore nnz19 ociicus)
+    target_link_libraries(FREDServer Alfred clntsh occi clntshcore nnz19 ociicus ${CMAKE_SOURCE_DIR}/dim/linux/libdim.a)
 endif ()
+
+target_link_libraries(FREDServer ${CMAKE_SOURCE_DIR}/dim/linux/libdim.a pthread)
