@@ -1,5 +1,5 @@
-CC = gcc
-CXX = g++
+CC = cc
+CXX = CC
 
 CPP = yes
 THREADS=yes

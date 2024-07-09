@@ -16,7 +16,7 @@
 #include <sstream>
 #include <iostream>
 
-
+DimServer DIMserver;
 
 char str[10][80];
 char str1[10][80];
@@ -117,6 +117,7 @@ int main(int argc, char** argv){
 	}
 	
 
+
 	fred.Start();
 
 #ifdef USE_MAPI
@@ -132,12 +133,17 @@ int main(int argc, char** argv){
     DimService runNumber("DELPHI/RUN_NUMBER",run);
 	DimService runNumber2("DELPHI/RUN_NUMBER2",run2);
 	DimService scoreService("CALCULATOR/SCORE",score);
-    DimServer::start("RUN_INFO");
-	DimServer::start("DelphiServer");
+	//DIMserver.setDnsNode("localhost");
+    DIMserver.start("RUN_INFO");
+	DIMserver.start("DelphiServer");
+	std::cout<<'\n'<<DIMserver.getDnsNode()<<DIMserver.getDnsPort()<<'\n';
 	DimCommand runCmnd("DELPHI/TEST/CMND","C");
 	DimCommand runCmnd2("PVSS_SIMPLE_COMMAND","C");
 	DimCommand runCmnd3("CALCULATOR/OPERATION","C");
 	DimCommand runCmnd4("PVSS_RPC","C");
+	//bool parseOnly = Fred::commandLineArguments(argc, argv);
+	//Fred fred(parseOnly, Fred::readConfigFile(), "./sections");
+	//fred.Start();
     while(1){
         run++;
 		//run2+=2;
@@ -167,12 +173,26 @@ int main(int argc, char** argv){
 			if(elements[0]=="ADD"){
 				score=firstNumber+secondNumber;
 			}
+			else if(elements[0]=="REMOVE"){
+				score=firstNumber-secondNumber;
+			}
+			else if(elements[0]=="MULT"){
+				score=firstNumber*secondNumber;
+			}
+			else if(elements[0]=="DIVIDE"){
+				if(secondNumber==0){
+					
+				}
+				score=firstNumber/secondNumber;
+			}
 			Print::PrintInfo(std::to_string(score));
 			scoreService.updateService();
 
 			//Print::PrintInfo(std::string(cmnd3)+"\n");
 		}
 		sleep(5);
+		
+
     }
 
 	return 0;
