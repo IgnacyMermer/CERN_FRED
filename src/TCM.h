@@ -1,6 +1,9 @@
 #ifndef TCM_H
 #define TCM_H
 
+#include <unordered_map>
+#include "./Parameter.h"
+#include <cstdint>
 //#include "FITboardsCommon.h"
 
 const double LHCclock_MHz = 40.0789658; //reference value
@@ -10,32 +13,52 @@ extern double TDCunit_ps; // 13
 extern double halfBC_ns; // 25
 extern double phaseStepLaser_ns, phaseStep_ns;
 
+struct TRGsyncStatus {
+    int
+        line0delay          : 5,
+        line0signalLost     : 1,
+        line0signalStable   : 1,
+                            : 1,
+        line1delay          : 5,
+        line1signalLost     : 1,
+        line1signalStable   : 1,
+        syncError           : 1, //this bit should be read from side status register (0x1A or 0x3A)
+        line2delay          : 5,
+        line2signalLost     : 1,
+        line2signalStable   : 1,
+        bitPositionsOK      : 1,
+        line3delay          : 5,
+        line3signalLost     : 1,
+        line3signalStable   : 1,
+        linkOK              : 1;
+};
+
 struct TypeTCM {
     struct ActualValues {
-        qint32  DELAY_A         :16,  //┐
+        int32_t DELAY_A         :16,  //┐
                                 :16,  //┘00
                 DELAY_C         :16,  //┐
                                 :16,  //┘01
                 LASER_DELAY     :16,  //┐
                                 :16;  //┘02
-        int attenSteps      :14,  //┐
+        uint32_t attenSteps      :14,  //┐
                 attenBusy       : 1,  //│
                 attenNotFound   : 1,  //│03
                                 :16,  //┘
                 EXT_SW          : 4,  //┐
                                 :28;  //┘04
-        qint32  boardTemperature:16,  //┐
+        int32_t  boardTemperature:16, //┐
                                 :16,  //┘05
                                 :32;  //]06
-        int boardType       : 2,  //┐
+        uint32_t boardType           : 2,  //┐
                                 : 6,  //│
-                SERIAL_NUM      : 8,  //│07
+            SERIAL_NUM          : 8,  //│07
                                 :16;  //┘
-        qint32  VTIME_LOW       :10,  //┐
+        int32_t  VTIME_LOW          :10,  //┐
                                 :22,  //┘08
                 VTIME_HIGH      :10,  //┐
                                 :22;  //┘09
-        int T2_LEVEL_A      :16,  //┐
+        uint32_t T2_LEVEL_A          :16,  //┐
                                 :16,  //┘0A
                 T2_LEVEL_C      :16,  //┐
                                 :16,  //┘0B
@@ -64,7 +87,7 @@ struct TypeTCM {
                 resetSystem     : 1,  //│
                 PMstatusChanged :20;  //┘
         TRGsyncStatus TRG_SYNC_A[10]; //]10-19
-        int CH_MASK_A       :10,  //┐
+        uint32_t CH_MASK_A           :10,  //┐
                                 : 7,  //│
                 syncErrorInLinkA:10,  //│
                 masterLinkErrorA: 1,  //│
@@ -76,16 +99,16 @@ struct TypeTCM {
                                 : 6,  //│
                 LASER_ENABLED   : 1,  //│1B
                 LASER_SOURCE    : 1;  //┘
-        quint64 LASER_PATTERN      ;  //]1C-1D
-        int PM_MASK_SPI =0x1FFFFF,//]1E
+        uint64_t LASER_PATTERN          ;  //]1C-1D
+        uint32_t PM_MASK_SPI =0x1FFFFF  ,  //]1E
                 lsrTrgSupprDelay: 6,  //┐
                 lsrTrgSupprDur  : 2,  //│1F
                                 :24;  //┘
-        qint16  averageTimeA       ,  //┐
+        int16_t  averageTimeA          ,  //┐
                 averageTimeC       ;  //┘20
-        int _reservedSpace0[0x30 - 0x20 - 1];
+        uint32_t _reservedSpace0[0x30 - 0x20 - 1];
         TRGsyncStatus TRG_SYNC_C[10]; //]30-39
-        int CH_MASK_C       :10,  //┐
+        uint32_t CH_MASK_C           :10,  //┐
                                 : 7,  //│
                 syncErrorInLinkC:10,  //│
                 masterLinkErrorC: 1,  //│
@@ -133,17 +156,17 @@ struct TypeTCM {
                 T3_ENABLED      : 1,  //│
                                 :17,  //┘
                 _reservedSpace3[0xD8 - 0x6A - 1];
-        GBTunit GBT;                  //]D8-F1
-        int _reservedSpace4[0xF7 - 0xF1 - 1];
+        //GBTunit GBT;                  //]D8-F1
+        uint32_t _reservedSpace4[0xF7 - 0xF1 - 1];
         Timestamp FW_TIME_MCU;        //]F7
-        int _reservedSpace5[0xFC - 0xF7 - 1],
+        uint32_t _reservedSpace5[0xFC - 0xF7 - 1],
                 FPGAtemperature,      //]FC
                 voltage1,             //]FD
                 voltage1_8;           //]FE
         Timestamp FW_TIME_FPGA;       //]FF
 
-        int *registers = (int *)this;
-        static const inline QVector<regblock> regblocks {{0x00, 0x20}, //block0     , 33 registers
+        uint32_t *registers = (int *)this;
+        static const inline std::vector<regblock> regblocks {{0x00, 0x20}, //block0     , 33 registers
                                                          {0x30, 0x3A}, //block1     , 11 registers
                                                          {0x50, 0x50}, //COUNTERS_UPD_RATE
                                                          {0x60, 0x6A}, //block2     , 11 registers
@@ -181,31 +204,31 @@ struct TypeTCM {
             averageTimeA_ns = averageTimeA * TDCunit_ps / 1000;
             averageTimeC_ns = averageTimeC * TDCunit_ps / 1000;
             laserFrequency_Hz = systemClock_MHz * 1e6 / (LASER_DIVIDER == 0 ? 1 << 24 : LASER_DIVIDER);
-            for (int i=0; i<10; ++i) {
+            /*for (int i=0; i<10; ++i) {
                 TRG_SYNC_A[i].syncError = syncErrorInLinkA & 1 << i;
                 TRG_SYNC_C[i].syncError = syncErrorInLinkC & 1 << i;
-            }
+            }*/
         }
-        int PM_MASK_TRG() { return CH_MASK_C << 10 | CH_MASK_A; }
+        uint32_t PM_MASK_TRG() { return CH_MASK_C << 10 | CH_MASK_A; }
     } act;
 
     struct Settings {
-        qint32  DELAY_A         :16,  //┐
+        int32_t  DELAY_A         :16,  //┐
                                 :16,  //┘00
                 DELAY_C         :16,  //┐
                                 :16,  //┘01
                 LASER_DELAY     :16,  //┐
                                 :16;  //┘02
-        int attenSteps      :14,  //┐
+        uint32_t attenSteps      :14,  //┐
                                 :18,  //┘03
                 EXT_SW          : 4,  //┐
                                 :28,  //┘04
                 _reservedSpace0[0x08 - 0x04 - 1];
-        qint32  VTIME_LOW       :10,  //┐
+        int32_t  VTIME_LOW       :10,  //┐
                                 :22,  //┘08
                 VTIME_HIGH      :10,  //┐
                                 :22;  //┘09
-        int T2_LEVEL_A      :16,  //┐
+        uint32_t T2_LEVEL_A      :16,  //┐
                                 :16,  //┘0A
                 T2_LEVEL_C      :16,  //┐
                                 :16,  //┘0B
@@ -227,8 +250,8 @@ struct TypeTCM {
                                 : 6,  //│
                 LASER_ENABLED   : 1,  //│1B
                 LASER_SOURCE    : 1;  //┘
-        quint64 LASER_PATTERN      ;  //]1C-1D
-        int PM_MASK_SPI        ,  //]1E
+        uint64_t LASER_PATTERN      ;  //]1C-1D
+        uint32_t PM_MASK_SPI        ,  //]1E
                 lsrTrgSupprDelay: 6,  //┐
                 lsrTrgSupprDur  : 2,  //│1F
                                 :24,  //┘
@@ -275,10 +298,10 @@ struct TypeTCM {
                 T3_ENABLED      : 1,  //│
                                 :17,  //┘
                 _reservedSpace5[0xD8 - 0x6A - 1];
-        GBTunit::ControlData GBT;     //]D8-E7
+        //GBTunit::ControlData GBT;     //]D8-E7
 
-        int *registers = (int *)this;
-        static const inline QVector<regblock> regblocksToRead {{0x00, 0x04}, //block0     ,  5 registers
+        uint32_t *registers = (int *)this;
+        static const inline std::vector<regblock> regblocksToRead {{0x00, 0x04}, //block0     ,  5 registers
                                                                {0x08, 0x0E}, //block1     ,  7 registers
                                                                {0x1A, 0x1D}, //block2     ,  4 registers
                                                                {0x1F, 0x1F}, //trigger suppression
@@ -302,14 +325,14 @@ struct TypeTCM {
     } set;
 
     struct Counters {
-        static const int
+        static const uint16_t
             addressFIFO     = 0x100,
             addressFIFOload = 0x101;
-        static const int
+        static const uint8_t
             number = 15,
             addressDirect   =  0x70;
         int FIFOload;
-        QDateTime newTime, oldTime = QDateTime::currentDateTime();
+        //QDateTime newTime, oldTime = QDateTime::currentDateTime();
         union {
             int New[number] = {0};
             struct {
@@ -332,8 +355,8 @@ struct TypeTCM {
         };
         int Old[number] = {0};
         double rate[number] = {-1,-1,-1,-1,-1, -1,-1,-1,-1,-1, -1,-1,-1,-1,-1};
-        GBTcounters GBT;
-        QList<DimService *> services;
+        //GBTcounters GBT;
+        std::list<DimService *> services;
     } counters;
 
     bool isOK() {return
@@ -347,20 +370,20 @@ struct TypeTCM {
         !act.readinessChangeC ;
     }
 
-    bool GBTisOK() {return
+    /*bool GBTisOK() {return
         act.GBT.isOK() &&
         act.GBTRxReady;
-    }
+    }*/
 
-    QList<DimService *> services, staticServices;
-    QList<DimCommand *> commands;
+    std::list<DimService *> services, staticServices;
+    std::list<DimCommand *> commands;
     int ORBIT_FILL_MASK[223];
-    struct { int
+    /*struct { int
         BCsyncLostInRun : 1 = 0;
-    } errorsLogged;
+    } errorsLogged;*/
 };
 
-const QHash<QString, Parameter> TCMparameters = {
+const std::unordered_map<std::string, Parameter> TCMparameters = {
     //name                  address width shift
     {"DELAY_A"              ,  0x00         },
     {"DELAY_C"              ,  0x01         },

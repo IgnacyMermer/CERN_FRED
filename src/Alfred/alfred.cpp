@@ -584,6 +584,8 @@ RpcInfo* ALFRED::GetRpcInfo(string name)
 
 void ALFRED::StartOnce()
 {
+    Print::PrintInfo(server);
+    Print::PrintInfo("server starting");
 	DimServer::start(server.c_str());
     Print::PrintInfo(string("Server ") + server + " started!");
 }

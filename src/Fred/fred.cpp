@@ -356,10 +356,10 @@ void Fred::Start()
 {
     StartOnce();
 
-    while (!Fred::terminate)
+    /*while (!Fred::terminate)
     {
         usleep(100000);
-    }
+    }*/
 }
 
 bool Fred::isNumber(string text)
