@@ -165,15 +165,15 @@ struct TypeTCM {
                 voltage1_8;           //]FE
         Timestamp FW_TIME_FPGA;       //]FF
 
-        uint32_t *registers = (int *)this;
-        static const inline std::vector<regblock> regblocks {{0x00, 0x20}, //block0     , 33 registers
+        uint32_t *registers = (uint32_t *)this;
+        /*static const inline std::vector<regblock> regblocks {{0x00, 0x20}, //block0     , 33 registers
                                                          {0x30, 0x3A}, //block1     , 11 registers
                                                          {0x50, 0x50}, //COUNTERS_UPD_RATE
                                                          {0x60, 0x6A}, //block2     , 11 registers
                                                          {0xD8, 0xE4}, //GBTcontrol , 13 registers
                                                          {0xE8, 0xF1}, //GBTstatus  , 10 registers
                                                          {0xF7, 0xF7}, //FW_TIME_MCU
-                                                         {0xFC, 0xFF}};//block3     ,  4 registers
+                                                         {0xFC, 0xFF}};//block3     ,  4 registers*/
         float //calculable values
             TEMP_BOARD = 20.0F,
             TEMP_FPGA  = 20.0F,
@@ -300,8 +300,8 @@ struct TypeTCM {
                 _reservedSpace5[0xD8 - 0x6A - 1];
         //GBTunit::ControlData GBT;     //]D8-E7
 
-        uint32_t *registers = (int *)this;
-        static const inline std::vector<regblock> regblocksToRead {{0x00, 0x04}, //block0     ,  5 registers
+        uint32_t *registers = (uint32_t *)this;
+        /*static const inline std::vector<regblock> regblocksToRead {{0x00, 0x04}, //block0     ,  5 registers
                                                                {0x08, 0x0E}, //block1     ,  7 registers
                                                                {0x1A, 0x1D}, //block2     ,  4 registers
                                                                {0x1F, 0x1F}, //trigger suppression
@@ -315,7 +315,7 @@ struct TypeTCM {
                                                                {0x1B, 0x1D}, //block2     ,  3 registers
                                                                {0x1F, 0x1F}, //trigger suppression
                                                                {0x60, 0x6A}, //block3     , 11 registers
-                                                               {0xD8, 0xE4}};//GBT control, 13 registers
+                                                               {0xD8, 0xE4}};//GBT control, 13 registers*/
         float //calculable values
             delayLaser_ns,
             laserFrequency_Hz,
@@ -334,9 +334,9 @@ struct TypeTCM {
         int FIFOload;
         //QDateTime newTime, oldTime = QDateTime::currentDateTime();
         union {
-            int New[number] = {0};
+            uint32_t New[number] = {0};
             struct {
-                int CNT_T5             , //]70
+                uint32_t CNT_T5             , //]70
                         CNT_T4             , //]71
                         CNT_T2             , //]72
                         CNT_T1             , //]73
@@ -353,7 +353,7 @@ struct TypeTCM {
                         CNT_BeamGasC       ; //]7E
             };
         };
-        int Old[number] = {0};
+        uint32_t Old[number] = {0};
         double rate[number] = {-1,-1,-1,-1,-1, -1,-1,-1,-1,-1, -1,-1,-1,-1,-1};
         //GBTcounters GBT;
         std::list<DimService *> services;
@@ -377,8 +377,8 @@ struct TypeTCM {
 
     std::list<DimService *> services, staticServices;
     std::list<DimCommand *> commands;
-    int ORBIT_FILL_MASK[223];
-    /*struct { int
+    uint32_t ORBIT_FILL_MASK[223];
+    /*struct { uint32_t
         BCsyncLostInRun : 1 = 0;
     } errorsLogged;*/
 };
@@ -433,6 +433,6 @@ const std::unordered_map<std::string, Parameter> TCMparameters = {
     {"T3_ENABLED"           , {0x6A,  1, 14}}
 };
 
-inline int prepareSignature(int sign) { return sign << 7 | (~sign & 0x7F); }
+inline uint32_t prepareSignature(uint32_t sign) { return sign << 7 | (~sign & 0x7F); }
 
 #endif // TCM_H

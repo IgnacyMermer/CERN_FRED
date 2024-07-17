@@ -34,11 +34,11 @@ add_library(Alfred SHARED ${ALFRED_SOURCES})
 
 if (MAPI)
     message(STATUS "Including MAPI")
-    include_directories(../mapi/include)
+    include_directories(./include/FREDServer/Mapi)
     add_compile_definitions(USE_MAPI)
     file(GLOB_RECURSE MAPI_SOURCES
-        "../mapi/src/mapifactory.cpp"
-        "../mapi/src/*.cpp"
+        "./src/Mapi/mapifactory.cpp"
+        "./src/Mapi/*.cpp"
     )
 endif ()
 
@@ -103,3 +103,4 @@ else ()
 endif ()
 
 target_link_libraries(FREDServer pthread)
+

@@ -199,11 +199,14 @@ void ALFRED::RegisterRpc(string name, ALFRED_TYPES::DIM_TYPE type, size_t size, 
 
 void ALFRED::RegisterRpcInfo(string name, string dns, ALFRED_TYPES::DIM_TYPE type, size_t size)
 {
+    Print::PrintInfo("RPC info registered");
     if (type == ALFRED_TYPES::DIM_TYPE::DATA && size == 0)
     {
         Print::PrintError("Invalid size of rpcinfo!");
         exit(EXIT_FAILURE);
     }
+
+    Print::PrintInfo("lallalal");
 
     switch (type)
     {
@@ -279,6 +282,7 @@ void ALFRED::RegisterRpc(Rpc *rpc)
 
 void ALFRED::RegisterRpcInfo(RpcInfo *rpcinfo)
 {
+    Print::PrintInfo("registerRpcInfo");
     if (!rpcinfo)
     {
         Print::PrintError("Invalid rpcinfo!");
@@ -286,6 +290,10 @@ void ALFRED::RegisterRpcInfo(RpcInfo *rpcinfo)
     }
     else
     {
+        Print::PrintInfo("wowoowow");
+        Print::PrintInfo(rpcinfo->Name());
+        rpcinfo->Send((void *)"2");
+        Print::PrintInfo("wowoowow2");
         rpcinfos[rpcinfo->Name()] = rpcinfo;
     }
 }

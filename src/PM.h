@@ -9,29 +9,29 @@
 
 struct TypePM {
     struct ActualValues{
-        int OR_GATE            : 8, //┐
+        uint32_t OR_GATE            : 8, //┐
                 PairedChannelsMode : 1, //│00
                                    :23; //⌡
         struct TimeAlignment {          //┐
-            int                      //│
+            int32_t                      //│
                 value              :12, //│
                 blockTriggers      : 1, //│01-0C
                                    :19; //│
         }      timeAlignment[12]      ; //⌡
-        int ADC_BASELINE[12][2]   , //]0D-24 //[Ch][0] for ADC0, [Ch][1] for ADC1
+        uint32_t ADC_BASELINE[12][2]   , //]0D-24 //[Ch][0] for ADC0, [Ch][1] for ADC1
                 ADC_RANGE   [12][2]   , //]25-3C
                 TRGchargeLevelHi   :12, //┐
                 TRGchargeLevelLo   : 4, //│3D
                                    :16; //⌡
-        int  TDC1tuning         : 8, //┐
+        int32_t  TDC1tuning         : 8, //┐
                 TDC2tuning         : 8, //│3E
                                    :16, //⌡
                 TDC3tuning         : 8, //┐
                                    :24; //┘3F
-        int  RAW_TDC_DATA[12][4]   ; //]40-4B //[Ch][0] for val1, [Ch][1] for val2
-        int DISPERSION  [12][2]   ; //]4C-63
-        int  MEANAMPL    [12][2][2]; //]64-7B //[Ch][0][0] for ADC0, [Ch][1][0] for ADC1
-        int CH_MASK_DATA          , //]7C
+        uint8_t  RAW_TDC_DATA[12][4]   ; //]40-4B //[Ch][0] for val1, [Ch][1] for val2
+        uint32_t DISPERSION  [12][2]   ; //]4C-63
+        int16_t  MEANAMPL    [12][2][2]; //]64-7B //[Ch][0][0] for ADC0, [Ch][1][0] for ADC1
+        uint32_t CH_MASK_DATA          , //]7C
                 CH_BASELINES_NOK      , //]7D
                 _reservedSpace0       , //]7E
                 mainPLLlocked      : 1, //┐
@@ -51,19 +51,19 @@ struct TypePM {
                 droppingHits       : 1, //│
                                    :17; //⌡
         struct ChannelSettings {        //┐
-            int CFD_THRESHOLD  :16, //│
+            uint32_t CFD_THRESHOLD  :16, //│
                                    :16; //│
-            int  CFD_ZERO       :16, //│
+            int32_t  CFD_ZERO       :16, //│
                                    :16, //│
                     ADC_ZERO       :16, //│80-AF
                                    :16; //│
-            int ADC_DELAY      :16, //│
+            uint32_t ADC_DELAY      :16, //│
                                    :16; //│
         } Ch[12];                       //⌡
-        int THRESHOLD_CALIBR[12]  , //]B0-BB
+        uint32_t THRESHOLD_CALIBR[12]  , //]B0-BB
                 boardTemperature   :16, //┐
                                    :16; //┘BC
-        int boardType          : 2, //┐
+        uint32_t boardType          : 2, //┐
                                    : 6, //│
                 SERIAL_NUM         : 8, //│BD
                                    :16, //⌡
@@ -71,15 +71,15 @@ struct TypePM {
                                    :30, //┘BE
                 _reservedSpace1[0xD8 - 0xBE - 1];
         //GBTunit GBT;                    //]D8-F1
-        int _reservedSpace2[0xF7 - 0xF1 - 1];
+        uint32_t _reservedSpace2[0xF7 - 0xF1 - 1];
         Timestamp FW_TIME_MCU;      //]F7
-        int _reservedSpace3[0xFC - 0xF7 - 1];
-        int FPGAtemperature,        //]FC
+        uint32_t _reservedSpace3[0xFC - 0xF7 - 1];
+        uint32_t FPGAtemperature,        //]FC
                 voltage1,               //]FD
                 voltage1_8;             //]FE
         Timestamp FW_TIME_FPGA;         //]FF
-        int *registers = (int *)this;
-        /*static const inline vector<regblock> regblocks {{0x00, 0x7D}, //block0     , 126 registers
+        uint32_t *registers = (uint32_t *)this;
+        /*static const inline std::vector<regblock> regblocks {{0x00, 0x7D}, //block0     , 126 registers
                                                          {0x7F, 0xBE}, //block1     ,  64 registers
                                                          {0xD8, 0xE4}, //GBTcontrol ,  13 registers
                                                          {0xE8, 0xF1}, //GBTstatus  ,  10 registers
@@ -91,10 +91,10 @@ struct TypePM {
             VOLTAGE_1V   = 1.0F,
             VOLTAGE_1_8V = 1.8F,
             RMS_Ch[12][2]; //[Ch][0] for ADC0, [Ch][1] for ADC1
-        int
+        int16_t
             TIME_ALIGN[12]  ,
             TRG_CNT_MODE    ;
-        int CH_MASK_TRG;
+        uint32_t CH_MASK_TRG;
         char BOARD_TYPE[4] = {0};
         void calculateValues() {
             TEMP_BOARD   = boardTemperature / 10.;
@@ -114,16 +114,16 @@ struct TypePM {
     } act;
 
     struct Settings {
-        int OR_GATE            : 8, //┐
+        uint32_t OR_GATE            : 8, //┐
                 PairedChannelsMode : 1, //│00
                                    :23; //⌡
         struct TimeAlignment {          //┐
-            int                      //│
+            int32_t                      //│
                 value              :12, //│
                 blockTriggers      : 1, //│01-0C
                                    :19; //│
         } TIME_ALIGN           [12]   ;  //⌡
-        int _reservedSpace0[0x25 - 0x0C - 1],
+        uint32_t _reservedSpace0[0x25 - 0x0C - 1],
                 ADC_RANGE      [12][2], //]25-3C
                 TRGchargeLevelHi   :12, //┐
                 TRGchargeLevelLo   : 4, //│3D
@@ -132,21 +132,21 @@ struct TypePM {
                 CH_MASK_DATA          , //]7C
                 _reservedSpace2[0x80 - 0x7C - 1];
         struct ChannelSettings {        //┐
-            int CFD_THRESHOLD  :16, //│
+            uint32_t CFD_THRESHOLD  :16, //│
                                    :16; //│
-            int  CFD_ZERO       :16, //│
+            int32_t  CFD_ZERO       :16, //│
                                    :16, //│80-AF
                     ADC_ZERO       :16, //│
                                    :16; //│
-            int ADC_DELAY      :16, //│
+            uint32_t ADC_DELAY      :16, //│
                                    :16; //│
         } Ch[12];                       //⌡
-        int  THRESHOLD_CALIBR[12] , //]B0-BB
+        uint32_t  THRESHOLD_CALIBR[12] , //]B0-BB
                 _reservedSpace3[0xD8 - 0xBB - 1];
         //GBTunit::ControlData GBT;       //]D8-E7
 
-        int *registers = (int *)this;
-        /*static const inline vector<regblock> regblocks {{0x00, 0x0C}, //block0     , 13 registers
+        uint32_t *registers = (uint32_t *)this;
+        /*static const inline std::vector<regblock> regblocks {{0x00, 0x0C}, //block0     , 13 registers
                                                          {0x25, 0x3D}, //block1     , 25 registers
                                                          {0x7C, 0x7C}, //CH_MASK_DATA
                                                          {0x80, 0xBB}, //block2     , 60 registers
@@ -154,22 +154,22 @@ struct TypePM {
     } set;
 
     struct Counters {
-        static const int
+        static const uint16_t
             addressFIFO     = 0x100,
             addressFIFOload = 0x101;
-        static const int
+        static const uint8_t
             number = 24,
             addressDirect   =  0xC0;
-        int FIFOload;
+        uint32_t FIFOload;
         //QDateTime newTime, oldTime = QDateTime::currentDateTime();
         union {
-            int New[number] = {0};
+            uint32_t New[number] = {0};
             struct {
-                int CFD,
+                uint32_t CFD,
                         TRG;
             } Ch[12];
         };
-        int Old[number] = {0};
+        uint32_t Old[number] = {0};
         union {
             float rate[number] = {-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1};
             struct {
@@ -183,11 +183,11 @@ struct TypePM {
     std::list<DimService *> services;
     std::list<DimCommand *> commands;
     int FEEid;
-    const int baseAddress;
+    const uint16_t baseAddress;
     const char *name;
-    //string fullName() const { return "PM" + std::to_string(name); }
+    std::string fullName() const { return std::string("PM") + std::string(name); }
     TRGsyncStatus &TRGsync;
-    /*struct { int
+    /*struct { uint32_t
         BCsyncLostInRun : 1 = 0,
         earlyHeader     : 1 = 0;
     } errorsLogged;*/

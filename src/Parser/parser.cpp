@@ -47,14 +47,15 @@ vector<Section> Parser::parseSections()
     vector<string> files = findFiles(this->sectionsPath);
     for (size_t i = 0; i < files.size(); i++)
     {
+        Print::PrintInfo(files[i]);
         vector<string> lines = readFile(files[i], this->sectionsPath);
-
         if (!lines.empty())
         {
             string name;
             vector<string> rest;
             vector<string> subsection = getSubsection(lines, "{}", name, rest); //without outer wrapper
 
+            Print::PrintInfo(name);
             Section section(name);
 
             rest = subsection;
@@ -122,6 +123,7 @@ vector<Section> Parser::parseSections()
                     this->badFiles = true;
                 } 
             }
+            Print::PrintInfo(section.getName());
             sections.push_back(section);  
         }
         else

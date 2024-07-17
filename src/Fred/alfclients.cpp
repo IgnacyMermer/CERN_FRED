@@ -119,16 +119,20 @@ AlfClients::Nodes AlfClients::createAlfInfo(string id, int32_t serial, int32_t e
 
 void AlfClients::registerCruAlf(Location::AlfEntry& entry)
 {
+    Print::PrintInfo("register");
     if (cruClients.count(entry.id) == 0)
     {
+        Print::PrintInfo("if");
         cruClients[entry.id] = map<int32_t, CruNodes>();
     }
 
     for (auto serial = entry.serials.begin(); serial != entry.serials.end(); serial++)
     {
+        Print::PrintInfo(entry.id);
         if (cruClients[entry.id].count(serial->first) == 0)
         {
             CruNodes cruNodes;
+            Print::PrintInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/PATTERN_PLAYER");
             cruNodes.patternPlayer = new CruAlfRpcInfo(entry.id + "/SERIAL_" + to_string(serial->first) + "/PATTERN_PLAYER", this->fred, ALFRED_TYPES::CRU_TYPES::PATTERN_PLAYER);
 
             this->fred->RegisterRpcInfo(cruNodes.patternPlayer);

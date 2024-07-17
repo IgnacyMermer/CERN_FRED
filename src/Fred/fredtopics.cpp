@@ -141,7 +141,6 @@ void FredTopics::registerMapiObject(string topic, Mapi* mapi, bool createFakeLin
 
             return;
         }
-
         Print::PrintError("Requested MAPI topic " + topic + " is not a registered topic!");
         throw runtime_error("Requested MAPI topic " + topic + " is not a registered topic!");
     }

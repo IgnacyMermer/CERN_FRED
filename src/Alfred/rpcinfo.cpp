@@ -239,50 +239,65 @@ void* RpcInfoString::Send(char *value)
 {
     bool sent = false;
     waitData = true;
+    Print::PrintInfo("send1");
     dataLock->clear();
+    Print::PrintInfo("send2");
     if (DimClient::sendCommand((this->name + "/RpcIn").c_str(), value) == 1)
     {
+        Print::PrintInfo("sendIf1");
         sent = true;
     }
 
     if (sent)
     {
-        //dataLock->wait();
+        Print::PrintInfo("sendIf2");
+        dataLock->wait();
         if (!dataLock->wait_for(5000))
         {
+            Print::PrintInfo("sendIf3");
             waitData = false;
             lock_guard<mutex> lock(dataMutex);
             recValue = noLink;
+            Print::PrintInfo("sendIf4");
         }
     }
     else
     {
+        Print::PrintInfo("sendElse1");
         //Print::PrintError(this->name, "Error in sendCommand");
         lock_guard<mutex> lock(dataMutex);
         recValue = noLink;
+        Print::PrintInfo("sendElse2");
     }
 
     waitData = false;
 
-    {
-        lock_guard<mutex> lock(dataMutex);
-        execData = recValue;
-    }
+    //{
+    lock_guard<mutex> lock(dataMutex);
+    execData = recValue;
+    //}
+    Print::PrintInfo("send3");
+    Print::PrintInfo(recValue);
 
-    void* result = (void*)Execution((void*)execData.c_str());
+    //void* result = (void*)Execution((void*)execData.c_str());
+    void* result = (void*)execData.c_str();
 
+    Print::PrintInfo("send4");
     if (serviceCallback)
     {
+        Print::PrintInfo("send5");
         serviceCallback->Update(result);
     }
 
     if (clientCallback)
     {
+        Print::PrintInfo("send6");
         clientCallback->Send(result);
     }
 
     if (!result)
     {
+        Print::PrintInfo("send7");
         //Print::PrintWarning(string("RpcInfo ") + Name() + " not valid data!");
         return NULL;
     }

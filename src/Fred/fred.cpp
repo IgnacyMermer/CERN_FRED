@@ -256,6 +256,14 @@ string Fred::getFredDns()
 
 void Fred::registerMapiObject(string topic, Mapi* mapi, bool createFakeLink)
 {
+    Print::PrintInfo("true");
+    Print::PrintInfo(std::to_string(createFakeLink));
+    if(createFakeLink){
+        Print::PrintInfo("jeden");
+    }
+    else{
+        Print::PrintInfo("dwa");
+    }
     fredTopics.registerMapiObject(topic, mapi, createFakeLink);
     mapi->registerMapi(this, topic);
 }
