@@ -12,6 +12,7 @@
 #include <sstream>
 #include <iostream>
 #include "./DIM_WINCC_Server.h"
+//#include "./IPbusControlPacket.h"
 
 DimServer dimServer;
 
@@ -37,6 +38,7 @@ int main(int argc, char** argv){
 	delete mapiFactory;
 #endif
 
+	//IPbusControlPacket p();
 
 	int run = 10, run2=100, score=0;
     DimService runNumber("DELPHI/RUN_NUMBER",run);

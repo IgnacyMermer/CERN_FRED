@@ -37,6 +37,7 @@ void MapiFactory::generateObjects()
 {
 
     // Basic mapi object
+    bool fakeLink = false;
     MapiExample *mapiExample = new MapiExample();
     this->fred->registerMapiObject(fred->Name() + "/MAPI_EXAMPLE/LOOP0/TEST", mapiExample, true);
     this->mapiObjects.push_back(mapiExample);

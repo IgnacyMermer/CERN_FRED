@@ -290,16 +290,15 @@ void ALFRED::RegisterRpcInfo(RpcInfo *rpcinfo)
     }
     else
     {
-        Print::PrintInfo("wowoowow");
         Print::PrintInfo(rpcinfo->Name());
         rpcinfo->Send((void *)"2");
-        Print::PrintInfo("wowoowow2");
         rpcinfos[rpcinfo->Name()] = rpcinfo;
     }
 }
 
 void ALFRED::Connect(ALFRED_TYPES::CONNECT type, string source, string destination)
 {
+    Print::PrintInfo("IN connect block");
 	switch (type)
 	{
         case ALFRED_TYPES::CONNECT::COMMAND_SERVICE:

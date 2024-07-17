@@ -8,6 +8,7 @@
 #include "./TCM.h"
 #include <cstring>
 #include "./FITDetector.h"
+#include "./IPbusControlPacket.h"
 
 class DIM_WINCC_Server {
 public:
@@ -23,6 +24,10 @@ public:
     } serverStatus;
 
     TypeTCM TCM;
+    //IPbusControlPacket ipbus;
+    //IPbusControlPacket p; 
+    //connect(&p, &IPbusControlPacket::error, this, &IPbusTarget::error);
+    //foreach(regblock b, TCM.act.regblocks) p.addTransaction(read, b.addr, TCM.act.registers + b.addr, b.size());
 
     TypePM allPMs[20] = {
         TypePM(0x0200, "A0", TCM.act.TRG_SYNC_A[0]),
